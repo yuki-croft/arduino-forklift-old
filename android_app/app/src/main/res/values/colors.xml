@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cell_idle">#E0E0E0</color>
+    <color name="cell_selected">#64B5F6</color>
+    <color name="cell_selected_stroke">#1565C0</color>
+    <color name="cell_disabled">#F5F5F5</color>
+    <color name="banner_emergency">#C62828</color>
+    <color name="banner_line_lost">#EF6C00</color>
+</resources>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Forklift Controller</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="connecting">Connecting...</string>
+    <string name="not_connected">Not connected</string>
+    <string name="connected_format">Connected: %1$s</string>
+    <string name="pick_device">Pick the Bluetooth module</string>
+    <string name="no_paired_devices">No paired devices. Pair the module in Android Bluetooth settings first, then try again.</string>
+    <string name="permission_denied">Bluetooth permission was denied.</string>
+    <string name="bluetooth_unavailable">This phone has no Bluetooth.</string>
+    <string name="bluetooth_off">Turn on Bluetooth first.</string>
+    <string name="load_title">Load from (top row: upper level)</string>
+    <string name="unload_title">Unload to (top row: upper level)</string>
+    <string name="start">Start</string>
+    <string name="job_format">Job: %1$s</string>
+    <string name="job_none">Job: none</string>
+    <string name="status_none">Status: no messages yet</string>
+    <string name="log_title">Messages (newest first, &gt; sent, &lt; received)</string>
+    <string name="banner_emergency">EMERGENCY: rear obstacle detected, the forklift returns to the start</string>
+    <string name="banner_line_lost">Line lost: the forklift is using light tracking</string>
+</resources>

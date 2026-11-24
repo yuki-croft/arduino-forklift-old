@@ -9,7 +9,8 @@ Design document and open items: [PROBLEM_1PAGER.md](PROBLEM_1PAGER.md) (Korean).
 | `master_center/` | center UNO | phone commands, LEDs, forwarding to the forklift (3 tabs) |
 | `forklift_test/` | forklift UNO | serial-monitor hardware test menu (kept separate from the main sketch) |
 | `bt_at_setup/` | any UNO | AT-command bridge for configuring HC-05 / HC-06 |
-| `tests/` | PC | fake-sensor logic tests (`tests/run_tests.sh`, needs g++ and python3) |
+| `android_app/` | Android phone | controller app (Java, Android Studio project) - **never built or run**, see its README |
+| `tests/` | PC | fake-sensor logic tests (`tests/run_tests.sh`, needs g++ and python3; `tests/cross_check/run.sh` also needs javac) |
 
 ## Status (honest)
 - Verified: `tests/run_tests.sh` (PC, fake sensors/time, not the Arduino toolchain). Forklift 35 checks and center board 30 checks passed on 2026-11-25.
