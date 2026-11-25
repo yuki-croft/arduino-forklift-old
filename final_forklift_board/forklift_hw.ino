@@ -101,10 +101,10 @@ void spinUntilLine(int dir) {  // ◆ NEW
 void turnLeft()  { spinUntilLine(-1); }   // ◆ NEW
 void turnRight() { spinUntilLine(+1); }   // ◆ NEW
 
-// ---------------- 리프트 저수준 (1700us 올림 / 1300us 내림, 사용자 지정) ----------------
+// ---------------- 리프트 저수준 (LIFT_INVERT=true 이므로 올림 1300us / 내림 1700us, 실물 시험 결과) ----------------
 void liftRun(int dir) {  // ◆ NEW
   servoLift.attach(PIN_SERVO_LIFT);
-  servoLift.writeMicroseconds(SERVO_STOP_US + dir * LIFT_SPEED);
+  servoLift.writeMicroseconds(SERVO_STOP_US + (LIFT_INVERT ? -dir : dir) * LIFT_SPEED);
 }
 
 void liftHalt() {  // ◆ NEW

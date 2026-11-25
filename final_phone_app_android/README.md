@@ -15,7 +15,7 @@ Phone app for the Arduino forklift: connect to the center board's Bluetooth modu
 
 ## Open in Android Studio
 1. File > Open > this `final_phone_app_android` folder, let Gradle sync (needs JDK 17+, which Android Studio bundles).
-2. On the phone: Settings > Bluetooth > pair the HC-06 module first (default PIN is usually 1234 or 0000).
+2. On the phone: Settings > Bluetooth > pair the phone-side HC-05 module first (PIN = the one set with `AT+PSWD`, see `../tool_bluetooth_hc05_setup`; the default PIN is not verified).
 3. Run the `app` configuration on the phone, press **Connect**, pick the module.
 4. Unit tests: right-click `app/src/test` > Run (real JUnit 4).
 
@@ -23,7 +23,7 @@ Phone app for the Arduino forklift: connect to the center board's Bluetooth modu
 With the center board running `final_center_board` and the phone module wired as in the pin map:
 tap `3`, then `B` -> the message list must show `SEL LOAD 3` and `SEL UNLOAD B`, and both cells turn blue.
 Tap `3` again after a finished job -> `EMPTY 3`. If nothing comes back, check baud rate (9600), the TX/RX wiring
-of the phone module, and that the module is HC-06 (slave) and not paired to something else.
+of the phone module, and that the phone-side HC-05 is set to slave (`AT+ROLE=0`) and not paired to something else.
 
 ## Things to know
 - The Start character is `S` (`CommandChars.START`); it must match `START_CHAR` in `final_center_board.ino`.
