@@ -1,44 +1,5 @@
-// Single-module Android project (the app is the root project), laid out flat on purpose:
-//   AndroidManifest.xml, src/ (Android screens), logic/ (pure Java, no Android classes), res/ (layouts, strings)
-// Java files in src/ and logic/ declare packages com.forklift.controller and com.forklift.controller.logic; the folders are
-// intentionally NOT nested like the package (Android Studio may show a harmless "package does not match folder" hint).
 // Versions below were NOT verified in the authoring environment (no network). If Android Studio
 // suggests an upgrade of the Android Gradle Plugin / Gradle, accepting it is fine.
 plugins {
-    id 'com.android.application' version '8.5.2'
+    id 'com.android.application' version '8.5.2' apply false
 }
-
-android {
-    namespace 'com.forklift.controller'
-    compileSdk 34
-
-    defaultConfig {
-        applicationId "com.forklift.controller"
-        minSdk 26
-        targetSdk 34
-        versionCode 1
-        versionName "0.1"
-    }
-
-    sourceSets {
-        main {
-            manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = ['src', 'logic']
-            res.srcDirs = ['res']
-        }
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-}
-
-// The app itself uses only framework classes (no AndroidX), so there are no dependencies.
-// Its unit tests live on the dev branch (pc_tests/app_logic) and run on a PC with javac.
