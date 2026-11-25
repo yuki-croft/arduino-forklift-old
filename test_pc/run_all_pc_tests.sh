@@ -14,6 +14,7 @@ run_suite() {   # run_suite "<name>" <command...>
 run_suite "final_forklift_board + final_center_board logic" bash "$here/run_test_firmware_logic.sh"
 run_suite "final_phone_app_android logic (unit tests)"      bash "$root/final_phone_app_android/tools/run_test_app_logic.sh"
 run_suite "app vs real center-board output"                 bash "$here/app_vs_center/run_test_app_vs_center.sh"
+run_suite "hardware test sketches (structure + stub syntax check)" python3 -I "$here/hw_test_sketches/check_test_sketches.py"
 run_suite "map layout geometry"                             bash -c "cd '$root/map' && python3 -m unittest test_layout"
 
 rm -f "/tmp/pc_test_$$.log"

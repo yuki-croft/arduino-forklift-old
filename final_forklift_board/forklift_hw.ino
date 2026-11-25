@@ -57,7 +57,7 @@ int lineTrim(int level) {  // ◆ NEW
   return 0;
 }
 
-void lineSteer(int lineLeft, int lineRight, int &speedLeft, int &speedRight) {  // ◆ NEW (test_forklift_board_hardware 와 같은 함수)
+void lineSteer(int lineLeft, int lineRight, int &speedLeft, int &speedRight) {  // ◆ NEW (test_forklift_line 과 같은 함수)
   int net = lineTrim(lineLevel(lineRight)) - lineTrim(lineLevel(lineLeft));
   if (LINE_STEER_INVERT) net = -net;
   speedLeft  = LINE_BASE_SPEED;
