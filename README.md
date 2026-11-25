@@ -7,12 +7,9 @@ Design document and open items: [PROBLEM_1PAGER.md](PROBLEM_1PAGER.md) (Korean).
 | Branch | Contents |
 |---|---|
 | `main` | **Finished code only**: `final_*` (upload/install), `tool_*` (one-time setup), `map_final/` (final map), docs |
-| `test-hardware-sketches` | `main` + the 8 `test_forklift_*` board test sketches (+ their PC structure check) |
-| `test-pc-logic` | `main` + `pc_tests/` (PC logic tests with fake sensors) |
-| `map-resources` | `main` + `map_resources/` (earlier map / cut-plan proposals, kept for reference) |
-| `dev` | the three branches above merged: everything, so `pc_tests/run_all.sh` can run all suites |
+| `dev` | `main` + everything not final yet: the 8 `test_forklift_*` board test sketches, `pc_tests/` (PC logic tests with fake sensors), `map_resources/` (earlier map / cut-plan proposals) |
 
-Flow: new or experimental work on a topic branch -> `dev` -> `main` once it is final.
+Flow: work and tests on `dev` -> copy/merge into `main` once it is final.
 
 ## Folders (names tell the role; every code folder sits directly under the repo root)
 | Folder | On branch | Role | Goes to | Notes |
@@ -24,14 +21,14 @@ Flow: new or experimental work on a topic branch -> `dev` -> `main` once it is f
 | `tool_hc06_forklift_setup/` | main | TOOL (one-time) | forklift board (HC-06 soldered) | no serial monitor: finds the HC-06 speed, sets name + PIN (+ 9600), reports by buzzer (long beep = OK, N short low beeps = failed step N) |
 | `tool_at_bridge/` | main | TOOL (one-time) | any UNO + HC-05 / HC-06 | plain AT-command pass-through bridge (any command typed by hand) |
 | `map_final/` | main | design (final) | none | final map: 150x150 pinwheel base, 100x100 line loop. Pictures `map_final_*.png`, plan `base150_*`, redraw with `python3 map_final/make_base150.py` (needs matplotlib) |
-| `test_forklift_*/` | test-hardware-sketches, dev | TEST (on a board) | forklift UNO, USB serial monitor | one stand-alone sketch per part (table below); not the final program |
-| `pc_tests/` | test-pc-logic, dev | TEST (on a PC) | none | one sub-folder per suite with its own `run.sh`; run all: `bash pc_tests/run_all.sh` (needs g++, python3, javac) |
-| `map_resources/` | map-resources, dev | reference | none | earlier proposals: `old_layout/` (180x150 map) and `old_cutplans/` (ring / full floor cut plans) |
+| `test_forklift_*/` | dev | TEST (on a board) | forklift UNO, USB serial monitor | one stand-alone sketch per part (table below); not the final program |
+| `pc_tests/` | dev | TEST (on a PC) | none | one sub-folder per suite with its own `run.sh`; run all: `bash pc_tests/run_all.sh` (needs g++, python3, javac) |
+| `map_resources/` | dev | reference | none | earlier proposals: `old_layout/` (180x150 map) and `old_cutplans/` (ring / full floor cut plans) |
 
 Naming rule: `final_*` = upload/install this; `tool_*` = one-time helper; `test_*` = checks only, never the final program.
 Arduino IDE: open the `.ino` whose name equals its folder (for example `final_forklift_board/final_forklift_board.ino`); the other tabs load automatically.
 
-### Hardware test sketches (`test_forklift_*/`, branch `test-hardware-sketches` or `dev`)
+### Hardware test sketches (`test_forklift_*/`, branch `dev`)
 Open **one folder at a time** (each is its own sketch = **one `.ino` file**: the upper part has pins/constants/hardware functions without Serial, the lower part (after the `SERIAL TEST SECTION` banner) has the serial-monitor menu + `setup()`/`loop()`). Serial monitor 9600 bps.
 | Sketch | Tests | Pins |
 |---|---|---|
