@@ -6,7 +6,7 @@ Phone app for the Arduino forklift: connect to the center board's Bluetooth modu
 
 ## Status (honest)
 - **Never built or run on a phone.** The authoring environment had no Android SDK.
-- Checked on a PC only: the pure-Java logic under `logic/` (26 unit tests, `pc_tests/app_logic/run.sh` on the `dev` / `test-pc-logic` branches) and a
+- Checked on a PC only: the pure-Java logic under `logic/` (26 unit tests, `pc_tests/app_logic/run.sh` on the `dev` branch) and a
   cross check against the real `final_center_board` firmware output (`pc_tests/app_vs_center/run.sh`, same branches).
 - The Android classes (`MainActivity`, `BluetoothLink`, `DevicePicker`, `CellPanel`, XML resources) were only
   compiled against **hand-written stubs** of the Android API, so real-API mistakes are still possible.
@@ -29,7 +29,7 @@ the expected package" hint. This layout was never built (see Status).
 1. File > Open > this `final_phone_app_android` folder, let Gradle sync (needs JDK 17+, which Android Studio bundles).
 2. On the phone: Settings > Bluetooth > pair the phone-side HC-05 module first (PIN = the one set with `AT+PSWD`, see `../tool_hc05_center_setup`; the default PIN is not verified).
 3. Run the app configuration (module `ForkliftController`) on the phone, press **Connect**, pick the module.
-4. Unit tests are not in this folder: they live on the `dev` / `test-pc-logic` branches (`pc_tests/app_logic/`) and run on a PC with `javac`.
+4. Unit tests are not in this folder: they live on the `dev` branch (`pc_tests/app_logic/`) and run on a PC with `javac`.
 
 ## First check on real hardware (suggested)
 With the center board running `final_center_board` and the phone module wired as in the pin map:
