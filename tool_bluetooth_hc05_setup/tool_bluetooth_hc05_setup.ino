@@ -9,14 +9,17 @@
  *   모듈 B (지게차 링크) : 마스터 (ROLE=1) + 지게차 HC-06 주소에 고정 (CMODE=0, BIND). -> 최종 배선 D0/D1
  * 최종 코드(final_center_board)가 두 링크 모두 9600 baud 로 쓰므로 두 모듈의 데이터 속도를 9600 으로 맞춘다.
  *
- * 사용법: 배선은 wiring 이미지 참고. KEY(34번 핀)를 3.3V 에 연결한 채 전원을 넣으면 AT 모드 (LED 가 약 2초에 한 번 깜빡임).
+ * 사용법: 배선은 wiring_hc05_setup.png 참고. 사용자 모듈은 KEY 핀 없이 EN, STATE 핀만 있는 보드 (ZS-040 형).
+ *   AT 모드: 보드의 작은 버튼(3.3V 를 칩 34번 핀에 연결, martyncurrey)을 누른 채 전원을 넣고 LED 가 약 2초에 한 번 깜빡이면 AT 모드.
+ *   버튼을 잠깐 누르고 떼면 일부 명령만 되는 "mini" 모드: 검색(INQ)/이름 조회(NAME?) 등은 버튼을 계속 누르고 있어야 함 (전체 AT 모드).
+ *   EN 은 연결하지 않는다 (martyncurrey: EN 을 LOW 로 하면 모듈이 꺼짐). STATE 는 연결 표시용이라 설정에 필요 없음.
  *   시리얼 모니터 9600 bps. 줄 끝 설정은 상관없음 (이 스케치가 CR+LF 를 붙여 보낸다). 메뉴:
  *   1 모듈 A 설정 / 2 모듈 B: 주변 장치 검색 / 3 모듈 B: 지게차 주소에 고정 / 4 현재 설정 보기 / 5 AT+RESET
  *   "AT" 로 시작하는 줄을 입력하면 그대로 모듈에 보낸다 (예: AT+PSWD=..., AT+PAIR=..., AT+LINK=...).
  *
  * 명령 출처 (직접 읽어 확인한 자료): martyncurrey.com/?p=1348 (AT 진입, ROLE/UART/NAME, INQ/PAIR/BIND/LINK 순서, 주소는 쉼표),
  *   howtomechatronics.com (ROLE/CMODE/BIND/ADDR?), core-electronics.com.au (PSWD/RESET).
- * 미확인: 모듈 펌웨어 버전별 차이 (martyncurrey: 3.0 펌웨어와 FC-114 는 다르게 동작할 수 있음), 검색 소요 시간, 지게차 HC-06 PIN.
+ * 미확인: 사용자 보드에 위 버튼이 있는지, EN 이 칩 34번 핀에 연결됐는지 (martyncurrey 댓글: 일부 ZS-040 은 연결 안 됨), 모듈 펌웨어 버전별 차이 (martyncurrey: 3.0 펌웨어와 FC-114 는 다르게 동작할 수 있음), 검색 소요 시간, 지게차 HC-06 PIN.
  *
  * [표기 규칙]  ★ EXTERNAL : 외부 자료/내장 라이브러리  /  ◆ NEW : 새로 작성  /  ?? TODO ?? : 사용자 확인 전 임시값
  */
@@ -169,6 +172,15 @@ bool bindToForklift(const char *addr) {  // ◆ NEW: 모듈 B = 마스터, 주�
   return sendAtFmt("AT+NAME=%s", LINK_MODULE_NAME);
 }
 
+void runPhoneSetup() {  // ◆ NEW
+  if (setupPhoneModule()) {
+    Serial.println(F("Module A configured"));
+  } else {
+    Serial.println(F("Module A setup FAILED"));
+    printFailHint();
+  }
+}
+
 void askAddressAndBind() {  // ◆ NEW
   char addr[ADDR_MAX];
   Serial.println(F("Type the forklift module address (colons or commas), then Enter:"));
@@ -180,10 +192,15 @@ void askAddressAndBind() {  // ◆ NEW
     Serial.println(F("Bad address. Expected 3 hex groups like 98d3:34:905d3f"));
     return;
   }
-  Serial.println(bindToForklift(addr) ? F("Module B configured") : F("Module B setup FAILED"));
+  if (bindToForklift(addr)) {
+    Serial.println(F("Module B configured"));
+  } else {
+    Serial.println(F("Module B setup FAILED"));
+    printFailHint();
+  }
 }
 
-void showSettings() {  // ◆ NEW: 일부 조회는 KEY 가 HIGH 일 때만 응답 (martyncurrey)
+void showSettings() {  // ◆ NEW: 일부 조회는 34번 핀이 HIGH(버튼 누름) 일 때만 응답 (martyncurrey)
   sendAt("AT", REPLY_TIMEOUT_MS);
   sendAt("AT+VERSION?", REPLY_TIMEOUT_MS);
   sendAt("AT+ADDR?", REPLY_TIMEOUT_MS);
@@ -193,6 +210,10 @@ void showSettings() {  // ◆ NEW: 일부 조회는 KEY 가 HIGH 일 때만 응�
 }
 
 // ---------------- 메뉴 ----------------
+void printFailHint() {  // ◆ NEW: 버튼만 쓰는 보드에서 흔한 실패 원인
+  Serial.println(F("Failed? Full AT mode needs pin 34 HIGH: keep the on-board button pressed (mini mode runs only some commands)"));
+}
+
 void printMenu() {
   Serial.println(F("\n== HC-05 setup (one module at a time) =="));
   Serial.println(F("1 Module A (phone side): slave, 9600, name"));
@@ -200,6 +221,7 @@ void printMenu() {
   Serial.println(F("3 Module B (link): master + bind to address"));
   Serial.println(F("4 Show settings   5 AT+RESET"));
   Serial.println(F("Or type a line starting with AT to send it as is"));
+  Serial.println(F("Board with EN/STATE only: power up while holding the on-board button, keep holding for 2/3/4"));
 }
 
 void handleLine(const char *line) {  // ◆ NEW
@@ -208,8 +230,8 @@ void handleLine(const char *line) {  // ◆ NEW
     return;
   }
   switch (line[0]) {
-    case '1': Serial.println(setupPhoneModule() ? F("Module A configured") : F("Module A setup FAILED")); break;
-    case '2': scanForForklift(); break;
+    case '1': runPhoneSetup(); break;
+    case '2': if (!scanForForklift()) printFailHint(); break;
     case '3': askAddressAndBind(); break;
     case '4': showSettings(); break;
     case '5': sendAt("AT+RESET", REPLY_TIMEOUT_MS); break;

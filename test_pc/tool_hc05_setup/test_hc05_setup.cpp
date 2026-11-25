@@ -11,7 +11,7 @@ unsigned long millis() { return ++fakeNow; }
 bool waitReply(unsigned long); void drainModule(unsigned long); bool sendAt(const char*, unsigned long);
 bool sendAtFmt(const char*, const char*); bool sendUartCmd(); bool pollUsbLine(); bool readLineWait(unsigned long);
 bool normalizeAddress(const char*, char*, size_t); bool setupPhoneModule(); bool scanForForklift(); bool bindToForklift(const char*);
-void askAddressAndBind(); void showSettings(); void printMenu(); void handleLine(const char*); void setup(); void loop();
+void runPhoneSetup(); void printFailHint(); void askAddressAndBind(); void showSettings(); void printMenu(); void handleLine(const char*); void setup(); void loop();
 #include SRC_MAIN
 static int fails = 0;
 static void expect(const char *name, bool ok) { printf("%s  %s\n", ok ? "PASS" : "FAIL", name); if (!ok) fails++; }
@@ -28,6 +28,7 @@ int main() {
   reset(); btModule.failOn = "AT+ROLE=0"; typeLine("1");
   expect("1: stops at the first failing command and reports FAILED",
          sent({"AT", "AT+ROLE=0"}) && Serial.out.find("Module A setup FAILED") != std::string::npos);
+  expect("failure prints the button hint", Serial.out.find("keep the on-board button pressed") != std::string::npos);
   reset(); typeLine("2");
   expect("2: scan = AT, RMAAD, ROLE=1, INIT, INQ and the +INQ line is shown",
          sent({"AT", "AT+RMAAD", "AT+ROLE=1", "AT+INIT", "AT+INQ"}) && Serial.out.find("+INQ:98D3:34:905D3F") != std::string::npos);
