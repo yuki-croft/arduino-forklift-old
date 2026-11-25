@@ -11,7 +11,7 @@
  *   forklift_sense.ino      : 센서 판별 함수 (교차점/모서리/표식/라인 이탈/짐/후방 장애물)
  *   forklift_comm.ino       : 블루투스 명령 수신, 상태 보고
  *   forklift_logic.ino      : 상태 머신 (입출력은 forklift_hw / forklift_sense / forklift_comm 의 함수만 호출 -> PC 에서 시험 가능)
- * 시험용(시리얼 모니터) 코드는 test_forklift_board_hardware/ 폴더에 따로 있다. 이 스케치에는 USB 시리얼을 쓰지 않는다.
+ * 시험용(시리얼 모니터) 코드는 test_forklift_* 폴더들에 따로 있다 (dev 계열 브랜치). 이 스케치에는 USB 시리얼을 쓰지 않는다.
  *
  * [프로토콜] PROBLEM_1PAGER.md 의 "통신 프로토콜 초안" / "지게차 상태 머신 초안" (제안 단계)
  * [표기] ★ EXTERNAL : 수업 PPT / 라이브러리  /  ◆ NEW : 새로 작성  /  ?? TODO ?? : 실측/확인 전 임시값

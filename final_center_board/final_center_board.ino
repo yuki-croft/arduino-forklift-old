@@ -28,7 +28,7 @@ const uint8_t LED_ON_LEVEL   = HIGH;   // ?? TODO ??: LED 배선 극성 미확�
 
 // ---------------- 상수 ----------------
 const long LINK_BAUD  = 9600;      // 지게차 링크 (HC-05 설정 보레이트와 같아야 함, 사전 설정 때 맞출 것)
-const long PHONE_BAUD = 9600;      // 폰 링크: 폰용 HC-05 를 tool_bluetooth_hc05_setup 으로 9600 에 맞춤
+const long PHONE_BAUD = 9600;      // 폰 링크: 폰용 HC-05 를 tool_hc05_center_setup 으로 9600 에 맞춤
 const char START_CHAR = 'S';       // ?? TODO ??: 앱의 시작 버튼에 지정할 글자 (임시)
 const uint8_t CELL_COUNT = 6;
 const uint8_t QUEUE_SIZE = 8;
