@@ -18,7 +18,7 @@ Naming rule: `final_*` = upload/install this; `test_*` = checks only, never the 
 Arduino IDE: open the `.ino` whose name equals its folder (for example `final_forklift_board/final_forklift_board.ino`); the other tabs load automatically.
 
 ### Hardware test sketches (`test_forklift_board_hardware/`)
-Open **one sub-folder at a time** (each is its own sketch, 2 tabs: `test_forklift_<part>.ino` = pins/constants/hardware functions without Serial, `<part>_serial_test.ino` = serial-monitor menu + `setup()`/`loop()`). Serial monitor 9600 bps.
+Open **one sub-folder at a time** (each is its own sketch = **one `.ino` file**: the upper part has pins/constants/hardware functions without Serial, the lower part (after the `SERIAL TEST SECTION` banner) has the serial-monitor menu + `setup()`/`loop()`). Serial monitor 9600 bps.
 | Sketch | Tests | Pins |
 |---|---|---|
 | `test_forklift_buzzer` | passive buzzer beep | D5 |
