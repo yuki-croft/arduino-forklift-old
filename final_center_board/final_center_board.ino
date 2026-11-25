@@ -11,7 +11,7 @@
  *   center_logic.ino  : 판단 로직 (입출력은 center_hw.ino 의 함수만 호출 -> PC 에서 단독 시험 가능)
  *
  * [연결] 지게차 링크: 하드웨어 시리얼 D0/D1 = HC-05 마스터 (업로드할 때는 모듈을 분리할 것)
- *        폰 링크    : 소프트웨어 시리얼 D2(모듈 TXD) / D3(모듈 RXD) = 슬레이브 전용 모듈(HC-06 추정)
+ *        폰 링크    : 소프트웨어 시리얼 D2(모듈 TXD) / D3(모듈 RXD) = 폰용 HC-05 (슬레이브로 설정, 사용자 확인)
  *        LED 4개    : D4~D7 (시계 방향 순서 표 참고)
  * [규칙] 프로토콜은 PROBLEM_1PAGER.md 의 "통신 프로토콜 초안"을 따른다 (제안 단계, 사용자 확인 필요 항목 있음).
  *        USB 시리얼은 지게차 링크가 쓰므로 이 보드에는 시리얼 모니터 디버깅 코드를 넣지 않는다.
@@ -28,7 +28,7 @@ const uint8_t LED_ON_LEVEL   = HIGH;   // ?? TODO ??: LED 배선 극성 미확�
 
 // ---------------- 상수 ----------------
 const long LINK_BAUD  = 9600;      // 지게차 링크 (HC-05 설정 보레이트와 같아야 함, 사전 설정 때 맞출 것)
-const long PHONE_BAUD = 9600;      // 폰 링크 (HC-06 기본값, PPT 슬라이드 4)
+const long PHONE_BAUD = 9600;      // 폰 링크: 폰용 HC-05 를 tool_bluetooth_hc05_setup 으로 9600 에 맞춤
 const char START_CHAR = 'S';       // ?? TODO ??: 앱의 시작 버튼에 지정할 글자 (임시)
 const uint8_t CELL_COUNT = 6;
 const uint8_t QUEUE_SIZE = 8;

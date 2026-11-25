@@ -1,6 +1,6 @@
 # Arduino forklift (FRIBEE EDU, UNO R3 compatible)
 
-Phone app -> center board (HC-05 master + phone-side slave module) -> forklift (HC-06 slave).
+Phone app -> center board (two HC-05: one set as phone-side slave, one as master) -> forklift (HC-06 slave).
 Design document and open items: [PROBLEM_1PAGER.md](PROBLEM_1PAGER.md) (Korean).
 
 ## Which code goes where (names tell the role)
@@ -10,7 +10,8 @@ Design document and open items: [PROBLEM_1PAGER.md](PROBLEM_1PAGER.md) (Korean).
 | `final_center_board/` | **FINAL** | center UNO | phone commands, LEDs, forwarding to the forklift, 3 .ino tabs (`final_center_board.ino` + `center_*.ino`) |
 | `final_phone_app_android/` | **FINAL** | Android phone | controller app (Java, Android Studio project), **never built or run**, see its README |
 | `test_forklift_board_hardware/` | TEST (on a board) | forklift UNO, USB serial monitor | one stand-alone sketch per part, each in its own sub-folder (see below); not the final program |
-| `tool_bluetooth_at_setup/` | TOOL (one-time) | any UNO + HC-05 / HC-06 | AT-command bridge to configure the modules |
+| `tool_bluetooth_hc05_setup/` | TOOL (one-time) | any UNO + ONE HC-05 at a time | menu-driven AT setup of the two center-board HC-05 modules (A = phone slave, B = forklift-link master bound to the HC-06); wiring picture `wiring_hc05_setup.png` |
+| `tool_bluetooth_at_setup/` | TOOL (one-time) | any UNO + HC-05 / HC-06 | plain AT-command pass-through bridge (any command typed by hand) |
 | `test_pc/` | TEST (on a PC) | none (runs on this computer) | fake-sensor logic tests: `test_pc/run_all_pc_tests.sh` (needs g++, python3, javac) |
 | `map/` | design | none | map layout proposal: images + generator (`python3 map/make_map.py`, needs matplotlib) |
 
