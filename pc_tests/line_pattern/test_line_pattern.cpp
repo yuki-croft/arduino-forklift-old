@@ -150,6 +150,8 @@ int main() {
     expect("glue: leaving the marker, senseMarker() turns false", !mk);
   }
 
+  if (LINE_STRONG_MIN > LINE_ON_MAX)
+    printf("WARN  LINE_STRONG_MIN (%d) is above the measured black maximum (%d): on the real sensor the detector would never fire. The tests above use synthetic values up to %d.\n", LINE_STRONG_MIN, LINE_ON_MAX, FULL);
   printf("%d checks, %d failed\n", checks, fails);
   if (fails) return 1;
   puts("all passed");
