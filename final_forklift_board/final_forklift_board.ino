@@ -44,7 +44,8 @@ const uint8_t PIN_LINE_RIGHT  = A4;
 const long IR_FREQ_HZ  = 38000;   // ★ EXTERNAL: 5_ABOT적외선센서.pptx 슬라이드 9
 const int  SERVO_STOP_US = 1500;  // ★ EXTERNAL: 2_2_ABOT주행.pptx 슬라이드 19
 const long BT_BAUD     = 9600;    // 지게차 HC-06 기본값 (PPT IoT12 슬라이드 4). 모듈 설정과 같아야 함
-const int  LIFT_SPEED  = 200;     // 사용자 지정: 1700us 올림 / 1300us 내림
+const int  LIFT_SPEED  = 200;     // 사용자 지정 속도 크기 (1500 +- 200)
+const bool LIFT_INVERT = true;    // 사용자 시험 결과(2026-11-26): 1700us=올림 으로 하면 실물이 반대 -> 반전 (test_forklift_lift 와 같은 값)
 const int  LINE_LEVEL1 = 27;      // 사용자 지정: 직선 보정 1단계 기준
 const int  LINE_LEVEL2 = 30;      // 사용자 지정: 직선 보정 2단계 기준
 const int  LINE_WHITE_MAX = 29;   // 사용자 실측: 흰 바닥 약 24~29

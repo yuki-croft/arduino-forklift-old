@@ -19,7 +19,8 @@ const uint8_t PIN_SERVO_LIFT = 12;   // 수압 펌프식 리프트 서보
 
 // ---------------- 상수 ----------------
 const int           SERVO_STOP_US       = 1500;     // ★ EXTERNAL: 2_2_ABOT주행.pptx 슬라이드 19
-const int           LIFT_SPEED          = 200;      // 사용자 지정: 펄스 1700us(=1500+200) = 올림, 1300us(=1500-200) = 내림
+const int           LIFT_SPEED          = 200;      // 사용자 지정 속도 크기 (1500 +- 200)
+const bool          LIFT_INVERT         = true;     // 사용자 시험 결과(2026-11-26): 처음 1700us=올림 으로 했더니 실물이 반대로 움직임 -> 방향 반전. 다시 반대면 false
 const int           LIFT_TEST_MS        = 300;      // ?? TODO ??: 리프트 1스텝 시간 미확정
 const unsigned long LIFT_FULL_STROKE_MS = 8000UL;   // 최소~최대 높이 총 8초: 하드웨어 제작자의 수동 캘리브레이션 값 (사용자 전달). 1700/1300us 속도에서의 값인지는 미확인 (이 시험에서는 사용하지 않음, 참고용)
 
@@ -36,9 +37,9 @@ void detachLift() {  // ◆ NEW
   servoLift.detach();
 }
 
-// ◆ NEW: speed > 0 = 올림(1700us), speed < 0 = 내림(1300us) (사용자 지정). 한계 스위치 정보 없음 -> 짧은 스텝만 수동 조작
+// ◆ NEW: speed > 0 = 올림, speed < 0 = 내림. LIFT_INVERT=true 이면 펄스는 올림 1300us / 내림 1700us. 한계 스위치 정보 없음 -> 짧은 스텝만 수동 조작
 void liftStep(int speed) {
-  servoLift.writeMicroseconds(SERVO_STOP_US + speed);
+  servoLift.writeMicroseconds(SERVO_STOP_US + (LIFT_INVERT ? -speed : speed));
   delay(LIFT_TEST_MS);
   servoLift.writeMicroseconds(SERVO_STOP_US);
 }
@@ -76,7 +77,7 @@ void printMenu() {
 
 // ---------------- 1. 리프트 서보 ----------------
 void testLift() {
-  Serial.println(F("Lift: u=up(1700us) d=down(1300us), one step, q=quit"));
+  Serial.println(F("Lift: u=up d=down, one step, q=quit"));
   attachLift();
   while (true) {
     int c = waitForChar(INPUT_TIMEOUT_MS);
