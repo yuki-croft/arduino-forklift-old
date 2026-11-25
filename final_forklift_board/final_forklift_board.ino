@@ -19,7 +19,6 @@
  */
 #include <Servo.h>       // Arduino 표준 라이브러리 (서보)
 #include <Ultrasonic.h>  // ★ EXTERNAL LIBRARY: "Ultrasonic" by Erick Simões (MIT, https://github.com/ErickSimoes/Ultrasonic)
-#include <NeoSWSerial.h> // ★ EXTERNAL LIBRARY: "NeoSWSerial" by SlashDevin (https://github.com/SlashDevin/NeoSWSerial)
 
 // ---------------- 핀맵 (사용자 제공 값 그대로) ----------------
 const uint8_t PIN_IR_TX       = 4;   // IR 발신기 (좌/전/우 통합)
@@ -32,8 +31,8 @@ const uint8_t PIN_IR_RX_RIGHT = 13;
 const uint8_t PIN_SERVO_LEFT  = 10;
 const uint8_t PIN_SERVO_RIGHT = 11;
 const uint8_t PIN_SERVO_LIFT  = 12;
-const uint8_t PIN_BT_RX       = 2;   // 블루투스 모듈 TXD
-const uint8_t PIN_BT_TX       = 3;   // 블루투스 모듈 RXD
+// 블루투스 HC-06 = 하드웨어 시리얼 D0(RX)/D1(TX) (사용자 확인 2026-11-26: 납땜됨). D0 에는 빨간 LED 도 납땜돼 있음. 별도 핀 상수/pinMode 없음.
+// D0/D1 은 USB 와 같은 포트 -> 이 프로그램은 Serial 에 디버그 출력을 하지 않는다 (모듈로 나가 폰에 보임).
 const uint8_t PIN_PHOTO_LEFT  = A0;
 const uint8_t PIN_PHOTO_RIGHT = A1;
 const uint8_t PIN_LINE_LEFT   = A2;
@@ -92,8 +91,7 @@ unsigned long liftLastMs = 0, rearCheckMs = 0, rearSinceMs = 0;
 // ---------------- 공용 객체 ----------------
 Servo servoLeft, servoRight, servoLift;
 Ultrasonic ultrasonic(PIN_US_TRIG, PIN_US_ECHO);
-// 인자 순서(rx, tx)는 SoftwareSerial 과 같다고 보는 추정 (라이브러리 문서로 확인 못함). 수신이 안 되면 이 순서부터 의심.
-NeoSWSerial bt(PIN_BT_RX, PIN_BT_TX);
+HardwareSerial &bt = Serial;   // ◆ NEW: HC-06 (D0/D1). 이전 NeoSWSerial(D2/D3) 대체
 
 void setup() {
   initHardware();

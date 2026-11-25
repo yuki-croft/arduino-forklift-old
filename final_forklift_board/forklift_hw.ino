@@ -11,8 +11,6 @@ void initHardware() {  // ◆ NEW
   pinMode(PIN_IR_RX_LEFT, INPUT);
   pinMode(PIN_IR_RX_FRONT, INPUT);
   pinMode(PIN_IR_RX_RIGHT, INPUT);
-  pinMode(PIN_BT_RX, INPUT);
-  pinMode(PIN_BT_TX, OUTPUT);
 }
 
 // ★ EXTERNAL(변형): 5_ABOT적외선센서.pptx 슬라이드 9 의 irDetect(), 발신 1핀 + 수신 3핀으로 변경. 0 = 감지

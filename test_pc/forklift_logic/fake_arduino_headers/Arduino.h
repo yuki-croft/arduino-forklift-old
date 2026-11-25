@@ -15,3 +15,7 @@ typedef uint8_t byte;
 #define constrain(x,a,b) ((x)<(a)?(a):((x)>(b)?(b):(x)))
 void pinMode(uint8_t,uint8_t); int digitalRead(uint8_t); int analogRead(uint8_t);
 void delay(unsigned long); unsigned long millis(); void tone(uint8_t,unsigned int,unsigned long=0);
+struct HardwareSerial { std::string in, out; void begin(long){}
+  int available(){ return (int)in.size(); } int read(){ int c=(unsigned char)in[0]; in.erase(0,1); return c; }
+  size_t write(uint8_t c){ out.push_back((char)c); return 1; } };
+extern HardwareSerial Serial;   // the sketch's "bt" is a reference to this
