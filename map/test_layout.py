@@ -36,7 +36,7 @@ class TrackTest(unittest.TestCase):
             self.assertTrue(ok, text)
 
     def test_junction_order_matches_firmware_numbering(self):
-        # forklift_main: load junction count = 4 - position (position 3 is met first on the left side)
+        # final_forklift_board: load junction count = 4 - position (position 3 is met first on the left side)
         self.assertEqual(self.lay.left_junction_ys(), sorted(self.lay.left_junction_ys()))      # bottom -> top
         self.assertEqual(self.lay.right_junction_ys(), sorted(self.lay.right_junction_ys(), reverse=True))  # top -> bottom
         self.assertEqual(len(self.lay.left_junction_ys()), 3)

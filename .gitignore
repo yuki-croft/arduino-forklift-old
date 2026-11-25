@@ -1,6 +1,6 @@
 *.o
 *.out
-fkharness
-harness
+test_forklift_logic
+test_center_logic
 __pycache__/
 *.pyc
