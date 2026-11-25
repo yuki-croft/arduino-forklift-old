@@ -4,7 +4,7 @@
 > 사용자가 직접 답한 내용만 "확정"으로 적고, 제 추정은 "가정"으로 분리했다.
 
 ## Context
-- 하드웨어: FRIBEE EDU (UNO R3 호환) 기반 소형 지게차 (슬레이브). 핀맵과 테스트 코드는 `test_forklift_board_hardware/` 참고.
+- 하드웨어: FRIBEE EDU (UNO R3 호환) 기반 소형 지게차 (슬레이브). 핀맵과 테스트 코드는 `test_forklift_board_hardware/` (기능별 스케치 8개) 참고.
 - 지게차 크기: 40 x 12 x 28 cm (세로 x 가로 x 높이). 벽 높이 30cm 이상은 이 크기를 기준으로 정함.
 - 마스터: 별도 UNO 1개. 폰용 HC-05 + 지게차 연결용 블루투스 마스터 모듈 + LED 4개.
 - 맵(사용자 스케치 기준)
@@ -63,7 +63,7 @@
 | 블루투스 모듈 (정정됨) | 지게차 탑재 = HC-06 (슬레이브), 센터 보드의 지게차 연결용 = HC-05 (마스터). 사용자가 05/06을 반대로 말했다고 정정. HC-06이 슬레이브 전용이라는 조사 결과(martyncurrey, Core Electronics)와 일치 |
 | 센터 보드 모듈 구성 | 블루투스 모듈 총 2개: (1) 폰 연결용 슬레이브 전용 모듈(우선 HC-06로 추정, 미확인) (2) 지게차 연결용 HC-05 마스터. 사용자: "양방향 통신이 필요하다면 마스터 모듈을 추가로 쓰겠다" |
 | 라인 센서 실측 | 검은 선 폭 19mm. 센서값(analogRead 원시값): 검은 선 위 31 이상, 흰 바닥 약 24~29. 선 위에서 값이 커짐 (사용자 실측) |
-| 라인 직진 보정 규칙 | 좌/우 센서 값이 각각 27 초과면 아주 미세하게, 30 초과면 미세하게 방향 조정 (사용자 지정). 구현: test_hw_drivers.ino 의 lineLevel/lineTrim/lineSteer. 조향 방향: 제 처음 가정(값이 큰 쪽으로 조향)에 사용자가 "회전은 반전으로"라고 답해 반대 방향으로 구현 (LINE_STEER_INVERT = true; 실주행에서 반대로 돌면 false로 바꿈). 감속량(LINE_TRIM_1=5, LINE_TRIM_2=15)은 사용자가 임시값으로 승인("네"), 시험 주행으로 조정. 기본속도도 임시값(TODO). PPT의 ndShade 비율 방식은 실측값 범위(24~31)가 좁아 사용하지 않음 |
+| 라인 직진 보정 규칙 | 좌/우 센서 값이 각각 27 초과면 아주 미세하게, 30 초과면 미세하게 방향 조정 (사용자 지정). 구현: test_forklift_board_hardware/test_forklift_line/test_forklift_line.ino 의 lineLevel/lineTrim/lineSteer. 조향 방향: 제 처음 가정(값이 큰 쪽으로 조향)에 사용자가 "회전은 반전으로"라고 답해 반대 방향으로 구현 (LINE_STEER_INVERT = true; 실주행에서 반대로 돌면 false로 바꿈). 감속량(LINE_TRIM_1=5, LINE_TRIM_2=15)은 사용자가 임시값으로 승인("네"), 시험 주행으로 조정. 기본속도도 임시값(TODO). PPT의 ndShade 비율 방식은 실측값 범위(24~31)가 좁아 사용하지 않음 |
 | 리프트 시간 | 최소 높이(4.5cm)에서 최대 높이(12.5cm)까지 총 8초. 이 값은 하드웨어 제작자의 수동 캘리브레이션 값이며 사용자가 이해하지 못해 서보 속도 값으로 대신 지정함. 같은 속도로 일정하다고 가정하면 약 1cm/초 (제 계산, 가정) |
 | 리프트 구동값 | 서보 펄스 1700us = 올림, 1300us = 내림 (사용자 지정). 코드 상수 LIFT_SPEED = 200 (1500 +- 200). 8초가 이 속도에서의 값인지는 미확인 |
 | 라인 센서 간격 | 좌-우 센서 사이 간격 = 선 폭(19mm), 중앙 센서는 그 가운데 (사용자 답변) |
@@ -187,12 +187,12 @@
 
 **코드 구조 원칙** (AGENTS.md 한도와 센서 특성 때문)
 - 주행 중 긴 delay()를 쓰지 않는다. 후방 초음파 읽기(최대 약 20ms 대기, 라이브러리 기본 타임아웃 README 기준)와 BT 수신 확인이 매 루프마다 돌아야 함.
-- 하드웨어 함수(test_hw_drivers.ino)와 상태 머신 파일을 분리하고, 시리얼 모니터 의존 코드는 지금처럼 별도 탭으로 둔다.
+- 하드웨어 함수와 상태 머신 파일을 분리하고, 시리얼 모니터 의존 코드는 지금처럼 별도 탭으로 둔다 (하드웨어 시험 스케치는 기능마다 `test_forklift_<기능>.ino` = 핀/상수/하드웨어 함수, `<기능>_serial_test.ino` = 시리얼 메뉴).
 - 상태별 함수는 50줄 이하, 상태 전환은 하나의 switch에 모은다.
 
 ## 구현 현황 (2026-11-25)
-- **이름 규칙 (2026-11-25 변경)**: `final_*` = 보드/폰에 올리는 최종 코드, `test_*` = 시험 전용(최종 프로그램 아님), `tool_*` = 일회성 도구. 이전 이름 -> 현재 이름: forklift_main -> final_forklift_board (탭 fk_* -> forklift_*), master_center -> final_center_board (탭 master_hw/master_logic -> center_hw/center_logic), android_app -> final_phone_app_android, forklift_test -> test_forklift_board_hardware (탭 hw_drivers/serial_tests -> test_hw_drivers/test_serial_menus), bt_at_setup -> tool_bluetooth_at_setup, tests -> test_pc (forklift_logic / center_logic / app_vs_center). Arduino IDE 규칙상 스케치 폴더 이름과 메인 .ino 이름은 같게 맞춤. 이 문서 아래의 옛 이름은 모두 현재 이름으로 바꿔 두었다.
-- test_forklift_board_hardware/ (3탭, 76/99/185줄): 센서/액추에이터 개별 시험 + lineSteer(직선 보정). 스텁 헤더로 문법 검사만 함, 보드 미시험.
+- **이름 규칙 (2026-11-25 변경)**: `final_*` = 보드/폰에 올리는 최종 코드, `test_*` = 시험 전용(최종 프로그램 아님), `tool_*` = 일회성 도구. 이전 이름 -> 현재 이름: forklift_main -> final_forklift_board (탭 fk_* -> forklift_*), master_center -> final_center_board (탭 master_hw/master_logic -> center_hw/center_logic), android_app -> final_phone_app_android, forklift_test -> test_forklift_board_hardware (이후 기능별 8개 스케치로 분리, 아래 참조), bt_at_setup -> tool_bluetooth_at_setup, tests -> test_pc (forklift_logic / center_logic / app_vs_center). Arduino IDE 규칙상 스케치 폴더 이름과 메인 .ino 이름은 같게 맞춤. 이 문서 아래의 옛 이름은 모두 현재 이름으로 바꿔 두었다.
+- test_forklift_board_hardware/ (2026-11-25 분리): 이전에는 한 스케치(3탭, 시리얼 메뉴 1~9)였으나 기능별 독립 스케치 8개로 나눔 (사용자 요청: 적외선/초음파/리프트/바퀴/부저). 각 스케치 = 폴더 1개 = 탭 2개(`test_forklift_<기능>.ino` 핀/상수/하드웨어 함수, Serial 없음 + `<기능>_serial_test.ino` 시리얼 메뉴, setup/loop). 요청한 5개: `test_forklift_buzzer`, `test_forklift_ultrasonic`, `test_forklift_infrared`, `test_forklift_wheels`, `test_forklift_lift`. 기존 시험이 사라지지 않게 같이 분리한 3개(사용자가 목록에 넣지 않음, 제 판단): `test_forklift_photo`(광원 A0/A1), `test_forklift_line`(라인 A2~A4 원시값 + 직선 보정 값), `test_forklift_bluetooth`. 핀 번호, 상수 값, 출력 문구는 원본과 같음(PC 비교 확인). 메뉴 번호는 스케치마다 다시 매김. 스텁 헤더로 문법/구조 검사만 함(`test_pc/hw_test_sketches/check_test_sketches.py`), Arduino IDE 컴파일과 보드 시험은 아직 안 함.
 - tool_bluetooth_at_setup/ (1탭): HC-05/HC-06 AT 설정용 통과 브리지. 문법 검사만 함.
 - final_center_board/ (3탭, 66/76/109줄): 센터 보드 코드. 점유 기록(상차 6칸 짐 있음/하차 6칸 비어 있음), 폰 명령('1'~'6', 'A'~'F', 'S'), 지게차 보고 처리, 구간 LED(한 번에 1개), 비상('X' 송신 + 다음 LED 고정 점등), 폰 송신 큐(지게차 링크 수신이 비어 있을 때만 송신).
   - PC 시험: 실제 파일을 스텁 입출력과 함께 g++로 컴파일하고 시나리오 30개를 실행, 전부 통과 (정상 작업, 점유 거부, 시작 무시, 작업 중 선택 거부, 비상 LED/복귀, 싣기 전 비상은 점유 기록 불변, 싣은 뒤 비상은 상차만 반영, 최근 LED 기억, 수신 대기 중 송신 보류).
