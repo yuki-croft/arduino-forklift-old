@@ -11,6 +11,7 @@ conv "$root/final_forklift_board/forklift_logic.ino"      "$work/l.inc"
 python3 "$here/make_prototypes.py" "$work/c.inc" "$work/l.inc" > "$work/protos.inc"
 cat "$here/hook_protos.inc" >> "$work/protos.inc"
 cp "$here"/*.h "$here/test_forklift_logic.cpp" "$work/"
+cp "$root/final_forklift_board/forklift_line_pattern.h" "$work/"   # included by final_forklift_board.ino (pure calculation, no Arduino calls)
 g++ -std=c++11 -I"$work" -DSRC_MAIN='"m.inc"' -DSRC_COMM='"c.inc"' -DSRC_LOGIC='"l.inc"' \
     "$work/test_forklift_logic.cpp" -o "$work/test_forklift_logic"
 "$work/test_forklift_logic"

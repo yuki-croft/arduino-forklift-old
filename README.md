@@ -42,6 +42,7 @@ Open **one folder at a time** (each is its own sketch = **one `.ino` file**: the
 | `test_forklift_bluetooth` | HC-06 receive for 15 s; **still assumes D2/D3 + USB monitor, does not match the soldered HC-06 on D0/D1** | D2 rx, D3 tx |
 
 ## Status (honest)
+- The junction / corner / marker detection (`final_forklift_board/forklift_line_pattern.h`) is a temporary rule built on assumed sensor values, tested only on synthetic traces (`pc_tests/line_pattern/`); real A2/A3/A4 measurements are still missing.
 - Verified on a PC only (fake sensors/time and stub Arduino headers, not the Arduino toolchain): all `pc_tests/` suites passed on 2026-11-26 on the `dev` branch.
 - **Not verified:** Arduino IDE compile, upload, any run of the final code on real boards. The hardware sketches were run on the forklift by the user (all fine except the lift direction, now inverted).
 - **Not implemented:** `senseJunction`, `senseCorner`, `senseMarker` in `final_forklift_board/forklift_sense.ino` always return false until sensor measurements are available (open item 20 in the 1-pager). The forklift cannot reach a cell until they are done.

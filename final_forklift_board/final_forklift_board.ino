@@ -5,20 +5,22 @@
  * final_forklift_board.ino  -  지게차 통합 스케치 (설정 / 상태 변수 / setup() / loop())
  * 보드: FRIBEE EDU (UNO R3 호환)
  *
- * [탭 구성] 같은 폴더의 .ino 는 Arduino IDE 가 하나로 이어 붙여 컴파일한다 (.h 없음)
+ * [탭 구성] 같은 폴더의 .ino 는 Arduino IDE 가 하나로 이어 붙여 컴파일한다 (.h 는 forklift_line_pattern.h 하나)
  *   final_forklift_board.ino : 설정, 상태 변수, setup/loop   (이 파일)
  *   forklift_hw.ino         : 구동 함수 (바퀴, 리프트, 직선 보정, 광 추적, 회전)
  *   forklift_sense.ino      : 센서 판별 함수 (교차점/모서리/표식/라인 이탈/짐/후방 장애물)
+ *   forklift_line_pattern.h : 라인 3개 값 -> 교차점/모서리/표식 판별 (순수 계산, 임시 기준값, PC 에서 시험)
  *   forklift_comm.ino       : 블루투스 명령 수신, 상태 보고
  *   forklift_logic.ino      : 상태 머신 (입출력은 forklift_hw / forklift_sense / forklift_comm 의 함수만 호출 -> PC 에서 시험 가능)
  * 시험용(시리얼 모니터) 코드는 test_forklift_* 폴더들에 따로 있다 (dev 계열 브랜치). 이 스케치에는 USB 시리얼을 쓰지 않는다.
  *
  * [프로토콜] PROBLEM_1PAGER.md 의 "통신 프로토콜 초안" / "지게차 상태 머신 초안" (제안 단계)
  * [표기] ★ EXTERNAL : 수업 PPT / 라이브러리  /  ◆ NEW : 새로 작성  /  ?? TODO ?? : 실측/확인 전 임시값
- * 주의: 센서 판별(교차점, 모서리, 표식)은 실측 전이라 항상 "감지 안 됨"을 돌려준다 (forklift_sense.ino 참고).
+ * 주의: 교차점/모서리/표식 판별은 실측 없이 제 가정값으로 만든 임시 규칙이다 (forklift_line_pattern.h, forklift_sense.ino 참고).
  */
 #include <Servo.h>       // Arduino 표준 라이브러리 (서보)
 #include <Ultrasonic.h>  // ★ EXTERNAL LIBRARY: "Ultrasonic" by Erick Simões (MIT, https://github.com/ErickSimoes/Ultrasonic)
+#include "forklift_line_pattern.h"   // ◆ NEW: 라인 패턴 판별 (순수 계산, 임시 기준값)
 
 // ---------------- 핀맵 (사용자 제공 값 그대로) ----------------
 const uint8_t PIN_IR_TX       = 4;   // IR 발신기 (좌/전/우 통합)
