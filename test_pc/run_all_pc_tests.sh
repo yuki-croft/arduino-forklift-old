@@ -16,6 +16,7 @@ run_suite "final_phone_app_android logic (unit tests)"      bash "$root/final_ph
 run_suite "app vs real center-board output"                 bash "$here/app_vs_center/run_test_app_vs_center.sh"
 run_suite "hardware test sketches (structure + stub syntax check)" python3 -I "$here/hw_test_sketches/check_test_sketches.py"
 run_suite "tool_bluetooth_hc05_setup (fake HC-05)"             bash "$here/tool_hc05_setup/run_test_hc05_setup.sh"
+run_suite "tool_bluetooth_hc06_forklift_setup (fake HC-06)"  bash "$here/tool_hc06_setup/run_test_hc06_setup.sh"
 run_suite "map layout geometry"                             bash -c "cd '$root/map' && python3 -m unittest test_layout"
 
 rm -f "/tmp/pc_test_$$.log"
