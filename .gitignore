@@ -2,3 +2,5 @@
 *.out
 fkharness
 harness
+__pycache__/
+*.pyc

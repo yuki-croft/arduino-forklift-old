@@ -10,6 +10,7 @@ Design document and open items: [PROBLEM_1PAGER.md](PROBLEM_1PAGER.md) (Korean).
 | `forklift_test/` | forklift UNO | serial-monitor hardware test menu (kept separate from the main sketch) |
 | `bt_at_setup/` | any UNO | AT-command bridge for configuring HC-05 / HC-06 |
 | `android_app/` | Android phone | controller app (Java, Android Studio project) - **never built or run**, see its README |
+| `map/` | PC (drawing) | map layout proposal: images + generator (`python3 map/make_map.py`, needs matplotlib), see the 1-pager |
 | `tests/` | PC | fake-sensor logic tests (`tests/run_tests.sh`, needs g++ and python3; `tests/cross_check/run.sh` also needs javac) |
 
 ## Status (honest)
