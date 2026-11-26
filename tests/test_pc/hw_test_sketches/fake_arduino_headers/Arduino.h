@@ -15,6 +15,7 @@ typedef uint8_t byte;
 #define A4 18
 #define F(x) (x)
 void pinMode(uint8_t, uint8_t);
+void digitalWrite(uint8_t, uint8_t);
 int digitalRead(uint8_t);
 int analogRead(uint8_t);
 void delay(unsigned long);

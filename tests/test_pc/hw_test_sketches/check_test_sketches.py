@@ -44,7 +44,7 @@ def fail(msg):
     fails += 1
     print("FAIL", msg)
 
-sketches = sorted(sketch_dir.glob("test_forklift_*.ino"))
+sketches = sorted(sketch_dir.glob("test_forklift_*.ino")) + sorted((root / "tests" / "test_center_board_hardware").glob("test_center_*.ino"))
 if not sketches:
     fail("no test_forklift_*.ino in %s" % sketch_dir)
 for main in sketches:
