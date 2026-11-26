@@ -267,7 +267,7 @@ void printMenu() {
   Serial.println(F("4 Show settings   5 AT+RESET"));
   Serial.println(F("6 Module B (link): master + bind to the preset forklift module (Yuki 98:DA:60:01:B1:60, PSWD 1234)"));
   Serial.println(F("Or type a line starting with AT to send it as is"));
-  Serial.println(F("Board with EN/STATE only: power up while holding the on-board button, keep holding for 2/3/4"));
+  Serial.println(F("No button on the board: tie EN to 3.3V (NOT 5V) before power-up, then use 1-6 (forum report, unverified)"));
 }
 
 void handleLine(const char *line) {  // ◆ NEW
