@@ -21,11 +21,17 @@ int analogRead(uint8_t);
 void delay(unsigned long);
 unsigned long millis();
 void tone(uint8_t, unsigned int, unsigned long = 0);
-struct FakeSerial {
+struct Stream {  // real core: HardwareSerial and SoftwareSerial both derive from Stream
+  virtual int available() = 0;
+  virtual int read() = 0;
+  virtual size_t write(uint8_t) = 0;
+  virtual ~Stream() {}
+};
+struct FakeSerial : Stream {
   void begin(long);
-  int available();
-  int read();
-  size_t write(unsigned char);
+  int available() override;
+  int read() override;
+  size_t write(uint8_t) override;
   size_t print(const char *); size_t print(char); size_t print(unsigned char); size_t print(int); size_t print(unsigned int);
   size_t print(long); size_t print(unsigned long); size_t print(double);
   size_t println(const char *); size_t println(char); size_t println(unsigned char); size_t println(int); size_t println(unsigned int);
