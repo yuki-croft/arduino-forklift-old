@@ -11,7 +11,7 @@ unsigned long millis() { return ++fakeNow; }
 bool waitReply(unsigned long); void drainModule(unsigned long); bool sendAt(const char*, unsigned long);
 bool sendAtFmt(const char*, const char*); bool sendUartCmd(); bool pollUsbLine(); bool readLineWait(unsigned long);
 bool normalizeAddress(const char*, char*, size_t); bool setupPhoneModule(); bool scanForForklift(); bool bindToForklift(const char*);
-void runPhoneSetup(); void printFailHint(); void bindAndReport(const char*); void askAddressAndBind(); void bindToYuki(); void showSettings(); void printMenu(); void handleLine(const char*); void setup(); void loop();
+void report(bool, const __FlashStringHelper*, const __FlashStringHelper*); void runPhoneSetup(); void printFailHint(); void bindAndReport(const char*); void askAddressAndBind(); void bindToYuki(); bool setupLinkSlave(); void runLinkSlave(); void showSettings(); void printMenu(); void handleLine(const char*); void setup(); void loop();
 #include SRC_MAIN
 static int fails = 0;
 static void expect(const char *name, bool ok) { printf("%s  %s\n", ok ? "PASS" : "FAIL", name); if (!ok) fails++; }
@@ -28,7 +28,7 @@ int main() {
   reset(); btModule.failOn = "AT+ROLE=0"; typeLine("1");
   expect("1: stops at the first failing command and reports FAILED",
          sent({"AT", "AT+ROLE=0"}) && Serial.out.find("Module A setup FAILED") != std::string::npos);
-  expect("failure prints the button hint", Serial.out.find("keep the on-board button pressed") != std::string::npos);
+  expect("failure prints the EN-to-3.3V hint", Serial.out.find("tie EN to 3.3V (NOT 5V)") != std::string::npos);
   reset(); typeLine("2");
   expect("2: scan = AT, RMAAD, ROLE=1, INIT, INQ and the +INQ line is shown",
          sent({"AT", "AT+RMAAD", "AT+ROLE=1", "AT+INIT", "AT+INQ"}) && Serial.out.find("+INQ:98D3:34:905D3F") != std::string::npos);
@@ -61,6 +61,11 @@ int main() {
          && Serial.out.find("Module B configured") != std::string::npos);
   reset(); btModule.failOn = "AT+BIND=98DA,60,01B160"; typeLine("6");
   expect("6: BIND failure stops the sequence and reports FAILED", sent({"AT", "AT+ROLE=1", "AT+CMODE=0", "AT+BIND=98DA,60,01B160"}) && Serial.out.find("Module B setup FAILED") != std::string::npos);
+  reset(); typeLine("7");
+  expect("7: module B slave = AT, ROLE=0, PSWD=1234, UART, NAME (in this order)",
+         sent({"AT", "AT+ROLE=0", "AT+PSWD=1234", "AT+UART=9600,0,0", "AT+NAME=FORKLIFT_LINK"}) && Serial.out.find("configured as SLAVE") != std::string::npos);
+  reset(); btModule.failOn = "AT+ROLE=0"; typeLine("7");
+  expect("7: failure stops and reports FAILED", sent({"AT", "AT+ROLE=0"}) && Serial.out.find("slave setup FAILED") != std::string::npos);
   reset(); typeLine("4");
   expect("4: show settings queries", sent({"AT", "AT+VERSION?", "AT+ADDR?", "AT+ROLE?", "AT+UART?", "AT+NAME?", "AT+CMODE?", "AT+BIND?", "AT+PSWD?", "AT+STATE?"}));
   reset(); typeLine("5"); expect("5: AT+RESET", sent({"AT+RESET"}));

@@ -18,6 +18,10 @@
  *   1 지게차 모듈 설정: ROLE=0 (슬레이브) / 데이터 속도 9600 / 이름 / 비밀번호(PSWD) -> 끝나면 주소를 보여 줌
  *   2 주소 보기: AT+ADDR? -> 화면에 "BIND 용" 쉼표 형식도 함께 표시 (센터 tool_bluetooth_hc05_setup 의 3번 메뉴에 그대로 입력)
  *   3 현재 설정 보기   4 AT+RESET
+ *   5 (역할 바꾸기 시험, 2026-11-26) 지게차 모듈을 마스터로: RMAAD, ROLE=1, CMODE=0, BIND=센터 모듈 B 주소, PSWD, UART 9600
+ *   6 (역할 바꾸기 시험) 센터 모듈 B 에 PAIR + LINK: INIT(오류 무시), PAIR=주소,9, LINK=주소 (martyncurrey.com/?p=2098 순서)
+ *     센터 모듈 B 는 먼저 슬레이브로 바꿔 둔다 (tool_bluetooth_hc05_setup 메뉴 7). 이 시험은 "모듈 B 가 마스터일 때만 데이터가 안 넘어간다"는 의심을 가르려는 것.
+ *     CMODE 값의 뜻은 자료마다 반대 (martyncurrey: 0 = 아무 장치, HC-05 설명서 EPFL 사본: 0 = 마지막 페어링 장치). 지금까지 CMODE=0 + BIND 로 연결(LED)은 됐으므로 0 을 쓴다.
  *   "AT" 로 시작하는 줄을 입력하면 그대로 모듈에 보낸다.
  * 중요: 비밀번호(PSWD)는 센터 모듈 B 가 페어링할 때 쓰는 값과 같아야 한다 (HC-05 기본값 1234).
  *
@@ -40,6 +44,9 @@ const long MODULE_AT_BAUD  = 38400;   // ★ EXTERNAL: martyncurrey, HC-05 AT �
 const long DATA_BAUD       = 9600;    // final_forklift_board 의 BT_BAUD 와 같음
 const char FORKLIFT_NAME[] = "FORKLIFT_HC05";   // ?? TODO ??: 임시 이름 (최대 32자)
 const char FORKLIFT_PSWD[] = "1234";            // ?? TODO ??: 임시 비밀번호 (센터 모듈 B 와 같아야 함)
+const char CENTER_B_ADDR[] = "2025,05,0086A4";  // 센터 모듈 B 주소 (사용자가 보낸 AT+ADDR? 응답 "+ADDR:2025:05:0086A4", 2026-11-26) 를 쉼표 형식으로
+const char LINK_MASTER_NAME[] = "FORKLIFT_MASTER";   // ?? TODO ??: 임시 이름 (마스터로 바꿀 때)
+const unsigned long PAIR_TIMEOUT_MS = 12000UL;        // PAIR=주소,9 (9초) 보다 조금 길게
 const unsigned long REPLY_TIMEOUT_MS = 2000UL;
 const unsigned long INPUT_TIMEOUT_MS = 60000UL;
 const uint8_t LINE_MAX = 40;
@@ -184,6 +191,39 @@ bool setupForkliftModule() {  // ◆ NEW: 슬레이브, 9600, 이름, 비밀번�
   return sendAtFmt("AT+PSWD=%s", FORKLIFT_PSWD);
 }
 
+// ◆ NEW (2026-11-26): 역할 바꾸기 시험 - 지게차 모듈 = 마스터, 센터 모듈 B 에 BIND
+bool setupForkliftMaster() {
+  if (!wakeAt()) return false;
+  if (!sendAt("AT+RMAAD", REPLY_TIMEOUT_MS)) return false;
+  if (!sendAt("AT+ROLE=1", REPLY_TIMEOUT_MS)) return false;
+  if (!sendAt("AT+CMODE=0", REPLY_TIMEOUT_MS)) return false;
+  if (!sendAtFmt("AT+BIND=%s", CENTER_B_ADDR)) return false;
+  if (!sendAtFmt("AT+PSWD=%s", FORKLIFT_PSWD)) return false;
+  if (!sendUartCmd()) return false;
+  return sendAtFmt("AT+NAME=%s", LINK_MASTER_NAME);
+}
+
+void runForkliftMaster() {  // ◆ NEW
+  if (setupForkliftMaster()) {
+    Serial.println(F("Forklift module configured as MASTER bound to center module B"));
+    Serial.println(F("Remove EN from 3.3V and power-cycle both modules (center module B must be slave: center tool menu 7)"));
+  } else {
+    Serial.println(F("Forklift master setup FAILED"));
+    printFailHint();
+  }
+}
+
+// ◆ NEW (2026-11-26): martyncurrey.com/?p=2098 의 INIT -> PAIR -> LINK. INIT 오류(17 등, 이 모듈 펌웨어에서는 0 이 보고됨)는 무시하고 계속
+void pairAndLinkCenter() {
+  char cmd[LINE_MAX + 16];
+  if (!wakeAt()) { printFailHint(); return; }
+  sendAt("AT+INIT", REPLY_TIMEOUT_MS);
+  snprintf(cmd, sizeof(cmd), "AT+PAIR=%s,9", CENTER_B_ADDR);
+  if (!sendAt(cmd, PAIR_TIMEOUT_MS)) { Serial.println(F("PAIR FAILED (center module B on, slave, not connected to anything?)")); return; }
+  if (!sendAtFmt("AT+LINK=%s", CENTER_B_ADDR)) { Serial.println(F("LINK FAILED")); return; }
+  Serial.println(F("PAIR + LINK OK"));
+}
+
 void printFailHint() {  // ◆ NEW
   Serial.println(F("Failed? AT mode: EN to 3.3V (NOT 5V) BEFORE power-up, 38400 baud; send AT again if the 1st reply is ERROR (forum report, unverified)"));
 }
@@ -206,6 +246,8 @@ void showSettings() {  // ◆ NEW
   sendAt("AT+UART?", REPLY_TIMEOUT_MS);
   sendAt("AT+NAME?", REPLY_TIMEOUT_MS);
   sendAt("AT+PSWD?", REPLY_TIMEOUT_MS);
+  sendAt("AT+CMODE?", REPLY_TIMEOUT_MS);   // ◆ 2026-11-26 추가
+  sendAt("AT+BIND?", REPLY_TIMEOUT_MS);
 }
 
 // ---------------- 메뉴 ----------------
@@ -214,6 +256,8 @@ void printMenu() {
   Serial.println(F("1 Set as slave (9600, name, PSWD) and show address"));
   Serial.println(F("2 Show address (AT+ADDR?)"));
   Serial.println(F("3 Show settings   4 AT+RESET"));
+  Serial.println(F("5 Set as MASTER bound to center module B (2025,05,0086A4)"));
+  Serial.println(F("6 PAIR + LINK to center module B"));
   Serial.println(F("Or type a line starting with AT to send it as is"));
   Serial.println(F("No button/KEY: tie EN to 3.3V (NOT 5V) before powering up, then use 1/2/3"));
 }
@@ -228,6 +272,8 @@ void handleLine(const char *line) {  // ◆ NEW
     case '2': showAddress(); break;
     case '3': showSettings(); break;
     case '4': sendAt("AT+RESET", REPLY_TIMEOUT_MS); break;
+    case '5': runForkliftMaster(); break;
+    case '6': pairAndLinkCenter(); break;
     default:  Serial.println(F("Unknown cmd"));
   }
 }

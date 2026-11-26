@@ -4,23 +4,16 @@
 /*
  * tool_bluetooth_hc05_setup.ino  -  센터 보드용 HC-05 2개 사전 설정 (한 번에 모듈 1개씩 연결)
  *
- * 센터 보드의 블루투스 모듈은 둘 다 HC-05 (사용자 확인). 역할:
- *   모듈 A (폰용)        : 슬레이브 (ROLE=0). 폰 앱이 접속한다.      -> 최종 배선 D2/D3
- *   모듈 B (지게차 링크) : 마스터 (ROLE=1) + 지게차 HC-06 주소에 고정 (CMODE=0, BIND). -> 최종 배선 D0/D1
- * 최종 코드(final_center_board)가 두 링크 모두 9600 baud 로 쓰므로 두 모듈의 데이터 속도를 9600 으로 맞춘다.
- *
- * 사용법: 배선은 wiring_hc05_setup.png 참고. 사용자 모듈은 KEY 핀 없이 EN, STATE 핀만 있는 보드 (ZS-040 형).
- *   AT 모드: 보드의 작은 버튼(3.3V 를 칩 34번 핀에 연결, martyncurrey)을 누른 채 전원을 넣고 LED 가 약 2초에 한 번 깜빡이면 AT 모드.
- *   버튼을 잠깐 누르고 떼면 일부 명령만 되는 "mini" 모드: 검색(INQ)/이름 조회(NAME?) 등은 버튼을 계속 누르고 있어야 함 (전체 AT 모드).
- *   EN 은 연결하지 않는다 (martyncurrey: EN 을 LOW 로 하면 모듈이 꺼짐). STATE 는 연결 표시용이라 설정에 필요 없음.
- *   시리얼 모니터 9600 bps. 줄 끝 설정은 상관없음 (이 스케치가 CR+LF 를 붙여 보낸다). 메뉴:
- *   1 모듈 A 설정 / 2 모듈 B: 주변 장치 검색 / 3 모듈 B: 지게차 주소에 고정 (주소 직접 입력: 98:DA:60:01:B1:60 형식도 됨) / 4 현재 설정 보기 / 5 AT+RESET
- *   6 모듈 B: 사용자가 알려 준 지게차 모듈(이름 Yuki, 주소 98:DA:60:01:B1:60, PIN 1234)에 바로 고정 (BIND=98DA,60,01B160 + PSWD=1234)
- *   "AT" 로 시작하는 줄을 입력하면 그대로 모듈에 보낸다 (예: AT+PSWD=..., AT+PAIR=..., AT+LINK=...).
- *
- * 명령 출처 (직접 읽어 확인한 자료): martyncurrey.com/?p=1348 (AT 진입, ROLE/UART/NAME, INQ/PAIR/BIND/LINK 순서, 주소는 쉼표),
- *   howtomechatronics.com (ROLE/CMODE/BIND/ADDR?), core-electronics.com.au (PSWD/RESET).
- * 미확인: 사용자 보드에 위 버튼이 있는지, EN 이 칩 34번 핀에 연결됐는지 (martyncurrey 댓글: 일부 ZS-040 은 연결 안 됨), 모듈 펌웨어 버전별 차이 (martyncurrey: 3.0 펌웨어와 FC-114 는 다르게 동작할 수 있음), 검색 소요 시간, 지게차 HC-06 PIN.
+ * 역할: 모듈 A (폰용) = 슬레이브 ROLE=0, 최종 배선 D2/D3 / 모듈 B (지게차 링크) = 마스터 ROLE=1 + 지게차 모듈 주소에 BIND, 최종 배선 D0/D1. 데이터 속도는 둘 다 9600.
+ * (2026-11-26 사용자: 폰용은 HC-06 으로 바꿈, 지게차 모듈은 HC-05. 모듈 A 메뉴는 HC-05 일 때만 해당.)
+ * 배선 (설정할 때): 모듈 TXD -> D2, 모듈 RXD -> D3 (분압). wiring_hc05_setup.png 참고. 시리얼 모니터 9600, 줄 끝 설정 상관없음 (CR+LF 를 붙여 보냄).
+ * AT 모드: 사용자 보드는 버튼/KEY 없음 (EN, STATE 만). 포럼 글 한 건의 방법: EN 을 3.3V (5V 아님) 에 연결한 채 전원을 넣는다 (이 모듈에서 응답 확인됨). 설정 뒤 EN 을 떼고 다시 켠다.
+ * 메뉴: 1 모듈 A 설정 / 2 모듈 B 주변 검색 / 3 모듈 B 를 입력한 주소에 고정 (98:DA:60:01:B1:60 형식도 됨) / 4 현재 설정 보기 / 5 AT+RESET
+ *   6 모듈 B 를 지게차 모듈 Yuki (98:DA:60:01:B1:60, PIN 1234) 에 고정: BIND=98DA,60,01B160 + PSWD=1234
+ *   7 (역할 바꾸기 시험) 모듈 B 를 슬레이브로: ROLE=0, PSWD=1234, UART 9600. 되돌리려면 6.
+ *   "AT" 로 시작하는 줄은 그대로 모듈에 보낸다 (예: AT+PAIR=..., AT+LINK=...).
+ * 명령 출처: martyncurrey.com/?p=1348, ?p=2098 (ROLE/UART/NAME, INQ/PAIR/BIND/LINK, 주소는 쉼표), howtomechatronics.com, core-electronics.com.au.
+ * 미확인: CMODE 값의 뜻 (자료마다 반대), 펌웨어 5.0-20220104 의 동작 차이 (AT+INIT 이 ERROR:(0)), 검색 소요 시간.
  *
  * [표기 규칙]  ★ EXTERNAL : 외부 자료/내장 라이브러리  /  ◆ NEW : 새로 작성  /  ?? TODO ?? : 사용자 확인 전 임시값
  */
@@ -178,7 +171,7 @@ bool setupPhoneModule() {  // ◆ NEW: 모듈 A = 슬레이브
 }
 
 // ★ EXTERNAL(변형): martyncurrey.com/?p=1348 댓글의 검색 순서 중 RMAAD, ROLE=1, INIT, INQ. INIT 은 이미 초기화돼 있으면 오류일 수 있어 무시
-bool scanForForklift() {  // ◆ NEW: 모듈 B 로 주변 블루투스를 찾는다 (지게차 HC-06 전원을 켜 둘 것)
+bool scanForForklift() {  // ◆ NEW: 모듈 B 로 주변 블루투스를 찾는다 (지게차 모듈 전원을 켜 둘 것)
   if (!sendAt("AT", REPLY_TIMEOUT_MS)) return false;
   if (!sendAt("AT+RMAAD", REPLY_TIMEOUT_MS)) return false;
   if (!sendAt("AT+ROLE=1", REPLY_TIMEOUT_MS)) return false;
@@ -197,23 +190,13 @@ bool bindToForklift(const char *addr) {  // ◆ NEW: 모듈 B = 마스터, 주�
   return sendAtFmt("AT+NAME=%s", LINK_MODULE_NAME);
 }
 
-void runPhoneSetup() {  // ◆ NEW
-  if (setupPhoneModule()) {
-    Serial.println(F("Module A configured"));
-  } else {
-    Serial.println(F("Module A setup FAILED"));
-    printFailHint();
-  }
+void report(bool ok, const __FlashStringHelper *okMsg, const __FlashStringHelper *failMsg) {  // ◆ NEW: 결과 한 줄 + 실패 힌트
+  Serial.println(ok ? okMsg : failMsg);
+  if (!ok) printFailHint();
 }
 
-void bindAndReport(const char *addr) {  // ◆ NEW
-  if (bindToForklift(addr)) {
-    Serial.println(F("Module B configured"));
-  } else {
-    Serial.println(F("Module B setup FAILED"));
-    printFailHint();
-  }
-}
+void runPhoneSetup() { report(setupPhoneModule(), F("Module A configured"), F("Module A setup FAILED")); }  // ◆ NEW
+void bindAndReport(const char *addr) { report(bindToForklift(addr), F("Module B configured"), F("Module B setup FAILED")); }  // ◆ NEW
 
 void askAddressAndBind() {  // ◆ NEW
   char addr[ADDR_MAX];
@@ -244,7 +227,7 @@ void bindToYuki() {  // ◆ NEW: 사용자가 알려 준 지게차 모듈 값으
   bindAndReport(addr);
 }
 
-void showSettings() {  // ◆ NEW: 일부 조회는 34번 핀이 HIGH(버튼 누름) 일 때만 응답 (martyncurrey)
+void showSettings() {  // ◆ NEW
   sendAt("AT", REPLY_TIMEOUT_MS);
   sendAt("AT+VERSION?", REPLY_TIMEOUT_MS);
   sendAt("AT+ADDR?", REPLY_TIMEOUT_MS);
@@ -258,9 +241,20 @@ void showSettings() {  // ◆ NEW: 일부 조회는 34번 핀이 HIGH(버튼 누
 }
 
 // ---------------- 메뉴 ----------------
-void printFailHint() {  // ◆ NEW: 버튼만 쓰는 보드에서 흔한 실패 원인
-  Serial.println(F("Failed? Full AT mode needs pin 34 HIGH: keep the on-board button pressed (mini mode runs only some commands)"));
-  Serial.println(F("No button on the board: tie EN to 3.3V (NOT 5V) before power-up (forum report, unverified)"));
+bool setupLinkSlave() {  // ◆ NEW (2026-11-26): 역할 바꾸기 시험용
+  if (!sendAt("AT", REPLY_TIMEOUT_MS)) return false;
+  if (!sendAt("AT+ROLE=0", REPLY_TIMEOUT_MS)) return false;
+  if (!sendAtFmt("AT+PSWD=%s", FORKLIFT_MODULE_PSWD)) return false;
+  if (!sendUartCmd()) return false;
+  return sendAtFmt("AT+NAME=%s", LINK_MODULE_NAME);
+}
+
+void runLinkSlave() {  // ◆ NEW
+  report(setupLinkSlave(), F("Module B configured as SLAVE (for the swapped-role test; menu 6 restores master)"), F("Module B slave setup FAILED"));
+}
+
+void printFailHint() {  // ◆ NEW
+  Serial.println(F("Failed? AT mode: tie EN to 3.3V (NOT 5V) before power-up (forum report); module answers at 38400"));
 }
 
 void printMenu() {
@@ -270,6 +264,7 @@ void printMenu() {
   Serial.println(F("3 Module B (link): master + bind to address"));
   Serial.println(F("4 Show settings (VERSION ADDR ROLE UART NAME CMODE BIND PSWD STATE)   5 AT+RESET"));
   Serial.println(F("6 Module B (link): master + bind to the preset forklift module (Yuki 98:DA:60:01:B1:60, PSWD 1234)"));
+  Serial.println(F("7 Module B (link): SLAVE for the swapped-role test (ROLE=0, PSWD 1234, 9600)"));
   Serial.println(F("Or type a line starting with AT to send it as is"));
   Serial.println(F("No button on the board: tie EN to 3.3V (NOT 5V) before power-up, then use 1-6 (forum report, unverified)"));
 }
@@ -286,6 +281,7 @@ void handleLine(const char *line) {  // ◆ NEW
     case '4': showSettings(); break;
     case '5': sendAt("AT+RESET", REPLY_TIMEOUT_MS); break;
     case '6': bindToYuki(); break;
+    case '7': runLinkSlave(); break;
     default:  Serial.println(F("Unknown cmd"));
   }
 }

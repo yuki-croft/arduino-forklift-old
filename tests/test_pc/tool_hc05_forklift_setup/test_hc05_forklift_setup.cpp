@@ -11,7 +11,7 @@ unsigned long millis() { return ++fakeNow; }
 void drainModule(unsigned long); bool waitReply(unsigned long); bool sendAt(const char*, unsigned long);
 bool sendAtFmt(const char*, const char*); bool sendUartCmd(); bool pollUsbLine();
 bool wakeAt(); bool parseAddress(char*, char*, size_t); void showAddress(); bool setupForkliftModule(); void printFailHint();
-void runForkliftSetup(); void showSettings(); void printMenu(); void handleLine(const char*); void setup(); void loop();
+bool setupForkliftMaster(); void runForkliftMaster(); void pairAndLinkCenter(); void runForkliftSetup(); void showSettings(); void printMenu(); void handleLine(const char*); void setup(); void loop();
 #include SRC_MAIN
 static int fails = 0;
 static void expect(const char *name, bool ok) { printf("%s  %s\n", ok ? "PASS" : "FAIL", name); if (!ok) fails++; }
@@ -58,7 +58,19 @@ int main() {
     strcpy(replyBuf, "+ADDR:98d3:34:90zz3f\r\nOK\r\n");
     expect("parse: non-hex rejected", !parseAddress(a, b, 24)); }
   reset(); typeLine("3");
-  expect("3: show settings queries", sent({"AT", "AT+VERSION?", "AT+ADDR?", "AT+ROLE?", "AT+UART?", "AT+NAME?", "AT+PSWD?"}));
+  expect("3: show settings queries", sent({"AT", "AT+VERSION?", "AT+ADDR?", "AT+ROLE?", "AT+UART?", "AT+NAME?", "AT+PSWD?", "AT+CMODE?", "AT+BIND?"}));
+  reset(); typeLine("5");
+  expect("5: master = AT, RMAAD, ROLE=1, CMODE=0, BIND=2025,05,0086A4, PSWD, UART, NAME (in this order)",
+         sent({"AT", "AT+RMAAD", "AT+ROLE=1", "AT+CMODE=0", "AT+BIND=2025,05,0086A4", "AT+PSWD=1234", "AT+UART=9600,0,0", "AT+NAME=FORKLIFT_MASTER"})
+         && Serial.out.find("configured as MASTER") != std::string::npos);
+  reset(); btModule.failOn = "AT+BIND=2025,05,0086A4"; typeLine("5");
+  expect("5: BIND failure stops and reports FAILED", btModule.cmds.size() == 5 && Serial.out.find("master setup FAILED") != std::string::npos);
+  reset(); typeLine("6");
+  expect("6: AT, INIT, PAIR=addr,9, LINK=addr then OK", sent({"AT", "AT+INIT", "AT+PAIR=2025,05,0086A4,9", "AT+LINK=2025,05,0086A4"}) && Serial.out.find("PAIR + LINK OK") != std::string::npos);
+  reset(); btModule.failOn = "AT+INIT"; typeLine("6");
+  expect("6: INIT error is ignored, PAIR and LINK still sent", sent({"AT", "AT+INIT", "AT+PAIR=2025,05,0086A4,9", "AT+LINK=2025,05,0086A4"}));
+  reset(); btModule.failOn = "AT+PAIR=2025,05,0086A4,9"; typeLine("6");
+  expect("6: PAIR failure -> no LINK, PAIR FAILED shown", sent({"AT", "AT+INIT", "AT+PAIR=2025,05,0086A4,9"}) && Serial.out.find("PAIR FAILED") != std::string::npos);
   reset(); typeLine("4"); expect("4: AT+RESET", sent({"AT+RESET"}));
   reset(); typeLine("AT+NAME?"); expect("raw AT line sent as typed", sent({"AT+NAME?"}));
   reset(); typeLine("9"); expect("unknown menu key", btModule.cmds.empty() && Serial.out.find("Unknown cmd") != std::string::npos);
