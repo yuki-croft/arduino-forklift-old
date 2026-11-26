@@ -251,6 +251,10 @@ void showSettings() {  // ◆ NEW: 일부 조회는 34번 핀이 HIGH(버튼 누
   sendAt("AT+ROLE?", REPLY_TIMEOUT_MS);
   sendAt("AT+UART?", REPLY_TIMEOUT_MS);
   sendAt("AT+NAME?", REPLY_TIMEOUT_MS);
+  sendAt("AT+CMODE?", REPLY_TIMEOUT_MS);   // ◆ 2026-11-26 추가: 링크 점검용 (이 모듈에서 응답하는지 미확인)
+  sendAt("AT+BIND?", REPLY_TIMEOUT_MS);
+  sendAt("AT+PSWD?", REPLY_TIMEOUT_MS);
+  sendAt("AT+STATE?", REPLY_TIMEOUT_MS);
 }
 
 // ---------------- 메뉴 ----------------
@@ -264,7 +268,7 @@ void printMenu() {
   Serial.println(F("1 Module A (phone side): slave, 9600, name"));
   Serial.println(F("2 Module B (link): scan for forklift HC-06"));
   Serial.println(F("3 Module B (link): master + bind to address"));
-  Serial.println(F("4 Show settings   5 AT+RESET"));
+  Serial.println(F("4 Show settings (VERSION ADDR ROLE UART NAME CMODE BIND PSWD STATE)   5 AT+RESET"));
   Serial.println(F("6 Module B (link): master + bind to the preset forklift module (Yuki 98:DA:60:01:B1:60, PSWD 1234)"));
   Serial.println(F("Or type a line starting with AT to send it as is"));
   Serial.println(F("No button on the board: tie EN to 3.3V (NOT 5V) before power-up, then use 1-6 (forum report, unverified)"));

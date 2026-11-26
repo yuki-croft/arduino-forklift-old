@@ -62,7 +62,7 @@ int main() {
   reset(); btModule.failOn = "AT+BIND=98DA,60,01B160"; typeLine("6");
   expect("6: BIND failure stops the sequence and reports FAILED", sent({"AT", "AT+ROLE=1", "AT+CMODE=0", "AT+BIND=98DA,60,01B160"}) && Serial.out.find("Module B setup FAILED") != std::string::npos);
   reset(); typeLine("4");
-  expect("4: show settings queries", sent({"AT", "AT+VERSION?", "AT+ADDR?", "AT+ROLE?", "AT+UART?", "AT+NAME?"}));
+  expect("4: show settings queries", sent({"AT", "AT+VERSION?", "AT+ADDR?", "AT+ROLE?", "AT+UART?", "AT+NAME?", "AT+CMODE?", "AT+BIND?", "AT+PSWD?", "AT+STATE?"}));
   reset(); typeLine("5"); expect("5: AT+RESET", sent({"AT+RESET"}));
   reset(); typeLine("AT+PSWD=1234");
   expect("raw AT line is sent as typed, CR+LF added by the sketch", sent({"AT+PSWD=1234"}));
