@@ -61,9 +61,9 @@ for main in sketches:
     if re.search(r"\bSerial\b", strip_comments(head)):
         fail("%s: USB Serial used in code above the serial test section" % name)
     code = strip_comments(raw)
-    for name in ("setup", "loop"):
-        if len(re.findall(r"\bvoid\s+%s\s*\(" % name, code)) != 1:
-            fail("%s: %s() must be defined exactly once" % (name, name))
+    for fn in ("setup", "loop"):
+        if len(re.findall(r"\bvoid\s+%s\s*\(" % fn, code)) != 1:
+            fail("%s: %s() must be defined exactly once" % (name, fn))
     for lit in re.findall(r'"((?:[^"\\]|\\.)*)"', code):
         if any(ord(ch) > 127 for ch in lit):
             fail("%s: non-ASCII string literal %r" % (name, lit))

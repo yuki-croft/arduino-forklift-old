@@ -11,7 +11,7 @@ Test code is under `tests/`, one-time tools under `tools/`. Single-file sketches
 | `final_center_board/` | **FINAL** | center UNO | phone commands, LEDs, forwarding to the forklift, 3 .ino tabs (`final_center_board.ino` + `center_*.ino`), wiring picture |
 | `final_phone_app_android/` | **FINAL** | Android phone | controller app (Java, Android Studio project), **never built or run**, see its README |
 | `tools/` | TOOL (one-time) | see rows below | `tool_bluetooth_hc05_setup.ino` (menu-driven AT setup of the two center-board HC-05 modules; wiring picture `wiring_hc05_setup.png`), `tool_bluetooth_hc06_forklift_setup.ino` (forklift board, HC-06 soldered: no serial monitor, reports by buzzer: long beep = OK, N short low beeps = failed step N), `tool_bluetooth_at_setup.ino` (plain AT pass-through bridge) |
-| `tests/test_forklift_board_hardware/` | TEST (on a board) | forklift UNO, USB serial monitor | one stand-alone `.ino` per part (table below); not the final program |
+| `tests/test_forklift_board_hardware/` | TEST (on a board) | forklift UNO, USB serial monitor | one stand-alone `.ino` per part (table below; 9 files); not the final program |
 | `tests/test_pc/` | TEST (on a PC) | none (runs on this computer) | fake-sensor logic tests: `bash tests/test_pc/run_all_pc_tests.sh` (needs g++, python3, javac) |
 | `map/` | design | none | `map/` = first layout proposal (images + generator `python3 map/make_map.py`, needs matplotlib); `map/map_final/` = final map (150x150 pinwheel base, 100x100 line loop; redraw with `python3 map/map_final/make_base150.py`); `map/old_cutplans/` = earlier cut plans |
 
@@ -26,6 +26,7 @@ Open **one file at a time** (each is its own sketch = **one `.ino` file**: the u
 | `test_forklift_ultrasonic` | rear HC-SR04 distance (cm) | D6 trig, D7 echo |
 | `test_forklift_infrared` | IR left/front/right (38 kHz) | D4 tx, D8 / D9 / D13 rx |
 | `test_forklift_wheels` | two drive servos, 6 moves (lift wheels off the ground, press `y`) | D10 left, D11 right |
+| `test_forklift_shuffle` | drives forward/backward in place by itself (no serial monitor; buzzer countdown, 5 cycles), for a check before placing on the map | D10 left, D11 right, D5 buzzer |
 | `test_forklift_lift` | lift servo, step up/down (`u` / `d` / `q`), direction inverted after the hardware test | D12 |
 | `test_forklift_photo` | photo-transistor raw/V | A0, A1 |
 | `test_forklift_line` | line sensor raw values + line-steer values, wheels not moved | A2, A3, A4 |
