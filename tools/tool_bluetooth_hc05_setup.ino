@@ -14,7 +14,8 @@
  *   버튼을 잠깐 누르고 떼면 일부 명령만 되는 "mini" 모드: 검색(INQ)/이름 조회(NAME?) 등은 버튼을 계속 누르고 있어야 함 (전체 AT 모드).
  *   EN 은 연결하지 않는다 (martyncurrey: EN 을 LOW 로 하면 모듈이 꺼짐). STATE 는 연결 표시용이라 설정에 필요 없음.
  *   시리얼 모니터 9600 bps. 줄 끝 설정은 상관없음 (이 스케치가 CR+LF 를 붙여 보낸다). 메뉴:
- *   1 모듈 A 설정 / 2 모듈 B: 주변 장치 검색 / 3 모듈 B: 지게차 주소에 고정 / 4 현재 설정 보기 / 5 AT+RESET
+ *   1 모듈 A 설정 / 2 모듈 B: 주변 장치 검색 / 3 모듈 B: 지게차 주소에 고정 (주소 직접 입력: 98:DA:60:01:B1:60 형식도 됨) / 4 현재 설정 보기 / 5 AT+RESET
+ *   6 모듈 B: 사용자가 알려 준 지게차 모듈(이름 Yuki, 주소 98:DA:60:01:B1:60, PIN 1234)에 바로 고정 (BIND=98DA,60,01B160 + PSWD=1234)
  *   "AT" 로 시작하는 줄을 입력하면 그대로 모듈에 보낸다 (예: AT+PSWD=..., AT+PAIR=..., AT+LINK=...).
  *
  * 명령 출처 (직접 읽어 확인한 자료): martyncurrey.com/?p=1348 (AT 진입, ROLE/UART/NAME, INQ/PAIR/BIND/LINK 순서, 주소는 쉼표),
@@ -37,6 +38,10 @@ const long MODULE_AT_BAUD  = 38400;   // ★ EXTERNAL: martyncurrey, HC-05 AT �
 const long DATA_BAUD       = 9600;    // final_center_board 의 LINK_BAUD / PHONE_BAUD 와 같아야 함
 const char PHONE_MODULE_NAME[] = "FORKLIFT_PHONE";   // ?? TODO ??: 임시 이름
 const char LINK_MODULE_NAME[]  = "FORKLIFT_LINK";    // ?? TODO ??: 임시 이름
+// 사용자가 알려 준 지게차 모듈 값 (2026-11-26): 이름 Yuki, 주소 98:DA:60:01:B1:60, 비밀번호/PIN 1234. 이미 설정돼 있어 바꿀 수 없다고 함.
+const char FORKLIFT_MODULE_NAME[] = "Yuki";
+const char FORKLIFT_MODULE_ADDR[] = "98:DA:60:01:B1:60";   // 6바이트 형식 -> BIND 형식 NAP,UAP,LAP = 98DA,60,01B160 (아래 normalizeAddress)
+const char FORKLIFT_MODULE_PSWD[] = "1234";                // 모듈 B(마스터) 의 PSWD 도 같게 설정
 const unsigned long REPLY_TIMEOUT_MS = 2000UL;
 const unsigned long SCAN_TIMEOUT_MS  = 60000UL;      // ?? TODO ??: AT+INQ 소요 시간 미확인
 const unsigned long INPUT_TIMEOUT_MS = 60000UL;
@@ -122,27 +127,46 @@ bool readLineWait(unsigned long timeoutMs) {  // ◆ NEW
   return false;
 }
 
-// 주소 "98d3:34:905d3f" 또는 "98d3,34,905d3f" -> BIND 용 쉼표 형식. 16진 글자 3묶음이 아니면 false
+// 주소를 BIND 용 쉼표 형식 NAP,UAP,LAP 로 바꾼다. 받는 형식 두 가지:
+//   (1) 모듈 형식 3묶음 "98d3:34:905d3f" 또는 "98d3,34,905d3f" (그대로 쉼표로)
+//   (2) 일반 6바이트 형식 "98:DA:60:01:B1:60" (각 묶음 정확히 16진 2글자) -> 앞 2바이트 + "," + 3번째 바이트 + "," + 나머지 3바이트 = "98DA,60,01B160"
+// 그 밖에는 false
 bool normalizeAddress(const char *in, char *out, size_t outSize) {  // ◆ NEW
-  uint8_t seps = 0, segLen = 0;
+  uint8_t groups = 0, segLen = 0, segLens[6];
   size_t n = strlen(in);
   if (n == 0 || n >= outSize) return false;
   for (size_t i = 0; i < n; i++) {
     char c = in[i];
     if (c == ':' || c == ',') {
-      if (segLen == 0) return false;
-      seps++;
+      if (segLen == 0 || groups >= 6) return false;
+      segLens[groups++] = segLen;
       segLen = 0;
-      out[i] = ',';
     } else if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
       segLen++;
-      out[i] = c;
     } else {
       return false;
     }
   }
-  out[n] = '\0';
-  return seps == 2 && segLen > 0;
+  if (segLen == 0 || groups >= 6) return false;
+  segLens[groups++] = segLen;
+  if (groups == 3) {
+    for (size_t i = 0; i < n; i++) out[i] = (in[i] == ':') ? ',' : in[i];
+    out[n] = '\0';
+    return true;
+  }
+  if (groups != 6) return false;
+  for (uint8_t g = 0; g < 6; g++) if (segLens[g] != 2) return false;
+  if (outSize < 15) return false;
+  const char *p = in;
+  size_t o = 0;
+  for (uint8_t g = 0; g < 6; g++) {
+    out[o++] = p[0];
+    out[o++] = p[1];
+    p += 3;                                  // 두 글자 + 구분 글자
+    if (g == 1 || g == 2) out[o++] = ',';    // 98DA , 60 , 01B160
+  }
+  out[o] = '\0';
+  return true;
 }
 
 // ---------------- 설정 순서 ----------------
@@ -168,6 +192,7 @@ bool bindToForklift(const char *addr) {  // ◆ NEW: 모듈 B = 마스터, 주�
   if (!sendAt("AT+ROLE=1", REPLY_TIMEOUT_MS)) return false;
   if (!sendAt("AT+CMODE=0", REPLY_TIMEOUT_MS)) return false;
   if (!sendAtFmt("AT+BIND=%s", addr)) return false;
+  if (!sendAtFmt("AT+PSWD=%s", FORKLIFT_MODULE_PSWD)) return false;   // 지게차 모듈 PIN 과 같게
   if (!sendUartCmd()) return false;
   return sendAtFmt("AT+NAME=%s", LINK_MODULE_NAME);
 }
@@ -181,23 +206,42 @@ void runPhoneSetup() {  // ◆ NEW
   }
 }
 
-void askAddressAndBind() {  // ◆ NEW
-  char addr[ADDR_MAX];
-  Serial.println(F("Type the forklift module address (colons or commas), then Enter:"));
-  if (!readLineWait(INPUT_TIMEOUT_MS)) {
-    Serial.println(F("Cancelled (no input)"));
-    return;
-  }
-  if (!normalizeAddress(lineBuf, addr, sizeof(addr))) {
-    Serial.println(F("Bad address. Expected 3 hex groups like 98d3:34:905d3f"));
-    return;
-  }
+void bindAndReport(const char *addr) {  // ◆ NEW
   if (bindToForklift(addr)) {
     Serial.println(F("Module B configured"));
   } else {
     Serial.println(F("Module B setup FAILED"));
     printFailHint();
   }
+}
+
+void askAddressAndBind() {  // ◆ NEW
+  char addr[ADDR_MAX];
+  Serial.println(F("Type the forklift module address (e.g. 98:DA:60:01:B1:60 or 98d3:34:905d3f), then Enter:"));
+  if (!readLineWait(INPUT_TIMEOUT_MS)) {
+    Serial.println(F("Cancelled (no input)"));
+    return;
+  }
+  if (!normalizeAddress(lineBuf, addr, sizeof(addr))) {
+    Serial.println(F("Bad address. Expected 6 bytes like 98:DA:60:01:B1:60 or 3 groups like 98d3:34:905d3f"));
+    return;
+  }
+  bindAndReport(addr);
+}
+
+void bindToYuki() {  // ◆ NEW: 사용자가 알려 준 지게차 모듈 값으로 바로 연결 (입력 없음)
+  char addr[ADDR_MAX];
+  if (!normalizeAddress(FORKLIFT_MODULE_ADDR, addr, sizeof(addr))) {
+    Serial.println(F("Preset address is invalid"));
+    return;
+  }
+  Serial.print(F("Binding to "));
+  Serial.print(FORKLIFT_MODULE_NAME);
+  Serial.print(F(" "));
+  Serial.print(FORKLIFT_MODULE_ADDR);
+  Serial.print(F(" -> "));
+  Serial.println(addr);
+  bindAndReport(addr);
 }
 
 void showSettings() {  // ◆ NEW: 일부 조회는 34번 핀이 HIGH(버튼 누름) 일 때만 응답 (martyncurrey)
@@ -212,6 +256,7 @@ void showSettings() {  // ◆ NEW: 일부 조회는 34번 핀이 HIGH(버튼 누
 // ---------------- 메뉴 ----------------
 void printFailHint() {  // ◆ NEW: 버튼만 쓰는 보드에서 흔한 실패 원인
   Serial.println(F("Failed? Full AT mode needs pin 34 HIGH: keep the on-board button pressed (mini mode runs only some commands)"));
+  Serial.println(F("No button on the board: tie EN to 3.3V (NOT 5V) before power-up (forum report, unverified)"));
 }
 
 void printMenu() {
@@ -220,6 +265,7 @@ void printMenu() {
   Serial.println(F("2 Module B (link): scan for forklift HC-06"));
   Serial.println(F("3 Module B (link): master + bind to address"));
   Serial.println(F("4 Show settings   5 AT+RESET"));
+  Serial.println(F("6 Module B (link): master + bind to the preset forklift module (Yuki 98:DA:60:01:B1:60, PSWD 1234)"));
   Serial.println(F("Or type a line starting with AT to send it as is"));
   Serial.println(F("Board with EN/STATE only: power up while holding the on-board button, keep holding for 2/3/4"));
 }
@@ -235,6 +281,7 @@ void handleLine(const char *line) {  // ◆ NEW
     case '3': askAddressAndBind(); break;
     case '4': showSettings(); break;
     case '5': sendAt("AT+RESET", REPLY_TIMEOUT_MS); break;
+    case '6': bindToYuki(); break;
     default:  Serial.println(F("Unknown cmd"));
   }
 }

@@ -11,7 +11,7 @@ unsigned long millis() { return ++fakeNow; }
 bool waitReply(unsigned long); void drainModule(unsigned long); bool sendAt(const char*, unsigned long);
 bool sendAtFmt(const char*, const char*); bool sendUartCmd(); bool pollUsbLine(); bool readLineWait(unsigned long);
 bool normalizeAddress(const char*, char*, size_t); bool setupPhoneModule(); bool scanForForklift(); bool bindToForklift(const char*);
-void runPhoneSetup(); void printFailHint(); void askAddressAndBind(); void showSettings(); void printMenu(); void handleLine(const char*); void setup(); void loop();
+void runPhoneSetup(); void printFailHint(); void bindAndReport(const char*); void askAddressAndBind(); void bindToYuki(); void showSettings(); void printMenu(); void handleLine(const char*); void setup(); void loop();
 #include SRC_MAIN
 static int fails = 0;
 static void expect(const char *name, bool ok) { printf("%s  %s\n", ok ? "PASS" : "FAIL", name); if (!ok) fails++; }
@@ -36,16 +36,31 @@ int main() {
   expect("2: INIT error is ignored, scan still runs", btModule.cmds.size() == 5 && btModule.cmds[4] == "AT+INQ");
   reset(); Serial.in = "3\n98d3:34:905d3f\n"; for (int i = 0; i < 10; i++) loop();
   expect("3: colon address -> comma BIND, ROLE=1, CMODE=0, UART, NAME (in this order)",
-         sent({"AT", "AT+ROLE=1", "AT+CMODE=0", "AT+BIND=98d3,34,905d3f", "AT+UART=9600,0,0", "AT+NAME=FORKLIFT_LINK"})
+         sent({"AT", "AT+ROLE=1", "AT+CMODE=0", "AT+BIND=98d3,34,905d3f", "AT+PSWD=1234", "AT+UART=9600,0,0", "AT+NAME=FORKLIFT_LINK"})
          && Serial.out.find("Module B configured") != std::string::npos);
   reset(); Serial.in = "3\n98D3,34,905D3F\n"; for (int i = 0; i < 10; i++) loop();
-  expect("3: comma address accepted as typed", btModule.cmds.size() == 6 && btModule.cmds[3] == "AT+BIND=98D3,34,905D3F");
+  expect("3: comma address accepted as typed", btModule.cmds.size() == 7 && btModule.cmds[3] == "AT+BIND=98D3,34,905D3F");
   reset(); Serial.in = "3\nnot-an-address\n"; for (int i = 0; i < 10; i++) loop();
   expect("3: bad address -> nothing sent to module", btModule.cmds.empty() && Serial.out.find("Bad address") != std::string::npos);
   reset(); Serial.in = "3\n98d3:34\n"; for (int i = 0; i < 10; i++) loop();
   expect("3: address with only 2 groups rejected", btModule.cmds.empty());
   reset(); Serial.in = "3\n:34:905d3f\n"; for (int i = 0; i < 10; i++) loop();
   expect("3: empty first group rejected", btModule.cmds.empty());
+  reset(); Serial.in = "3\n98:DA:60:01:B1:60\n"; for (int i = 0; i < 10; i++) loop();
+  expect("3: 6-byte MAC 98:DA:60:01:B1:60 -> BIND=98DA,60,01B160", btModule.cmds.size() == 7 && btModule.cmds[3] == "AT+BIND=98DA,60,01B160");
+  reset(); Serial.in = "3\n98:DA:60:01:B1\n"; for (int i = 0; i < 10; i++) loop();
+  expect("3: 5-group address rejected", btModule.cmds.empty() && Serial.out.find("Bad address") != std::string::npos);
+  reset(); Serial.in = "3\n98:DA:60:01:B1:6\n"; for (int i = 0; i < 10; i++) loop();
+  expect("3: 6-group address with a 1-digit group rejected", btModule.cmds.empty());
+  reset(); Serial.in = "3\n98:DA:60:01:B1:60:11\n"; for (int i = 0; i < 10; i++) loop();
+  expect("3: 7-group address rejected", btModule.cmds.empty());
+  reset(); typeLine("6");
+  expect("6: preset Yuki -> AT, ROLE=1, CMODE=0, BIND=98DA,60,01B160, PSWD=1234, UART, NAME (in this order)",
+         sent({"AT", "AT+ROLE=1", "AT+CMODE=0", "AT+BIND=98DA,60,01B160", "AT+PSWD=1234", "AT+UART=9600,0,0", "AT+NAME=FORKLIFT_LINK"})
+         && Serial.out.find("Binding to Yuki 98:DA:60:01:B1:60 -> 98DA,60,01B160") != std::string::npos
+         && Serial.out.find("Module B configured") != std::string::npos);
+  reset(); btModule.failOn = "AT+BIND=98DA,60,01B160"; typeLine("6");
+  expect("6: BIND failure stops the sequence and reports FAILED", sent({"AT", "AT+ROLE=1", "AT+CMODE=0", "AT+BIND=98DA,60,01B160"}) && Serial.out.find("Module B setup FAILED") != std::string::npos);
   reset(); typeLine("4");
   expect("4: show settings queries", sent({"AT", "AT+VERSION?", "AT+ADDR?", "AT+ROLE?", "AT+UART?", "AT+NAME?"}));
   reset(); typeLine("5"); expect("5: AT+RESET", sent({"AT+RESET"}));

@@ -262,3 +262,5 @@
 **비교**: A 안(6장, 180x150, 선택) / B 안(60x90 4장만, 180x120): B 안은 모서리 회전 반지름 20을 확보하면 루프 세로가 80 이하로 줄어 (필요 110) 교차점 3개와 칸 상자가 들어가지 않음.
 **위험/미확인**: 회전 중심과 라인 센서 위치(후진 때 본선 인식) 미확인, 이음선 5개가 검은 선을 5곳에서 가로지름(뒷면 테이프로 단차 제거 필요), 칸 상자 크기와 선반 높이 미정(미결정 2번), 시작 표식 크기(20번).
 **시험**: map/test_layout.py 9개 통과 (판 겹침/채움, 크기, 규칙, 교차점 순서가 펌웨어 번호 체계와 일치, 칸 상자가 이음선과 안 겹침 등). 이미지는 직접 열어 확인함. 실물 제작/주행은 미시험.
+
+- Note (2026-11-26, center tool): the user reported the forklift Bluetooth module is already configured and cannot be changed: name Yuki, address 98:DA:60:01:B1:60, PIN 1234. `tools/tool_bluetooth_hc05_setup.ino` menu 6 maps center module B (master) to it: ROLE=1, CMODE=0, `BIND=98DA,60,01B160`, `PSWD=1234`, UART 9600, NAME. Only checked against a fake module on the PC. Not verified on a real HC-05: how it treats leading-zero groups (here `01B160`), and the button-less AT entry (EN to 3.3V, a single forum report).
