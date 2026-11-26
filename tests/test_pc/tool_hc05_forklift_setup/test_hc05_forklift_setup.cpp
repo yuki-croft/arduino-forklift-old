@@ -10,18 +10,18 @@ unsigned long millis() { return ++fakeNow; }
 // prototypes the Arduino IDE would generate automatically
 void drainModule(unsigned long); bool waitReply(unsigned long); bool sendAt(const char*, unsigned long);
 bool sendAtFmt(const char*, const char*); bool sendUartCmd(); bool pollUsbLine();
-bool parseAddress(char*, char*, size_t); void showAddress(); bool setupForkliftModule(); void printFailHint();
+bool wakeAt(); bool parseAddress(char*, char*, size_t); void showAddress(); bool setupForkliftModule(); void printFailHint();
 void runForkliftSetup(); void showSettings(); void printMenu(); void handleLine(const char*); void setup(); void loop();
 #include SRC_MAIN
 static int fails = 0;
 static void expect(const char *name, bool ok) { printf("%s  %s\n", ok ? "PASS" : "FAIL", name); if (!ok) fails++; }
-static void reset() { Serial.in.clear(); Serial.out.clear(); btModule.in.clear(); btModule.pending.clear(); btModule.cmds.clear(); btModule.failOn.clear(); btModule.silent = false; lineLen = 0; }
+static void reset() { Serial.in.clear(); Serial.out.clear(); btModule.in.clear(); btModule.pending.clear(); btModule.cmds.clear(); btModule.failOn.clear(); btModule.failTimes = 1000000; btModule.silent = false; lineLen = 0; }
 static void typeLine(const std::string &s) { Serial.in += s + "\n"; for (int i = 0; i < 6; i++) loop(); }
 static bool sent(const std::vector<std::string> &want) { return btModule.cmds == want; }
 int main() {
   setup();
   expect("module starts at AT baud 38400", btModule.baud == 38400);
-  expect("pins: module TXD = D4 (Arduino receives), module RXD = D3", PIN_MODULE_TXD == 4 && PIN_MODULE_RXD == 3);
+  expect("pins: Arduino RX = D2 (module TXD), Arduino TX = D3 (module RXD)", PIN_MODULE_TXD == 2 && PIN_MODULE_RXD == 3);
   reset(); typeLine("1");
   expect("1: AT, ROLE=0, UART 9600, NAME, PSWD, then ADDR? (in this order)",
          sent({"AT", "AT+ROLE=0", "AT+UART=9600,0,0", "AT+NAME=FORKLIFT_HC05", "AT+PSWD=1234", "AT+ADDR?"})
@@ -30,9 +30,16 @@ int main() {
          Serial.out.find("Forklift module address: 98d3:34:905d3f") != std::string::npos
          && Serial.out.find("menu 3): 98d3,34,905d3f") != std::string::npos);
   reset(); btModule.failOn = "AT+ROLE=0"; typeLine("1");
-  expect("1: stops at the first failing command, reports FAILED + button hint",
+  expect("1: stops at the first failing command, reports FAILED + EN hint",
          sent({"AT", "AT+ROLE=0"}) && Serial.out.find("setup FAILED") != std::string::npos
-         && Serial.out.find("keep the on-board button pressed") != std::string::npos);
+         && Serial.out.find("EN to 3.3V (NOT 5V)") != std::string::npos);
+  reset(); btModule.failOn = "AT"; btModule.failTimes = 1; typeLine("1");
+  expect("1: first AT answers ERROR -> AT is sent once more, then setup continues",
+         btModule.cmds.size() == 7 && btModule.cmds[0] == "AT" && btModule.cmds[1] == "AT" && btModule.cmds[2] == "AT+ROLE=0"
+         && Serial.out.find("Forklift module configured") != std::string::npos);
+  reset(); btModule.failOn = "AT"; typeLine("1");
+  expect("1: AT fails twice -> FAILED after exactly two AT, nothing else sent",
+         sent({"AT", "AT"}) && Serial.out.find("setup FAILED") != std::string::npos);
   reset(); typeLine("2");
   expect("2: only AT+ADDR? is sent and the address is shown",
          sent({"AT+ADDR?"}) && Serial.out.find("98d3,34,905d3f") != std::string::npos);

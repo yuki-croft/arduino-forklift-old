@@ -6,6 +6,7 @@ struct SoftwareSerial {
   std::string in, pending;
   std::vector<std::string> cmds;
   std::string failOn;               // command that gets "ERROR:(17)"
+  int failTimes = 1000000;          // how many times failOn fails before it answers OK again
   bool silent = false;              // true = module never answers
   long baud = 0;
   SoftwareSerial(uint8_t, uint8_t) {}
@@ -20,7 +21,7 @@ struct SoftwareSerial {
     while ((p = pending.find("\r\n")) != std::string::npos) {
       std::string cmd = pending.substr(0, p); pending.erase(0, p + 2); cmds.push_back(cmd);
       if (silent) continue;
-      if (cmd == failOn) in += "ERROR:(17)\r\n";
+      if (cmd == failOn && failTimes-- > 0) in += "ERROR:(17)\r\n";
       else if (cmd == "AT+INQ") in += "+INQ:98D3:34:905D3F,1F00,7FFF\r\nOK\r\n";
       else if (cmd == "AT+ADDR?") in += "+ADDR:98d3:34:905d3f\r\nOK\r\n";
       else in += "OK\r\n";

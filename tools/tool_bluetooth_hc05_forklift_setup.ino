@@ -1,15 +1,19 @@
 // ====================================================================================================
-// TOOL (one-time setup, not final) | board: FORKLIFT board (or any UNO) + ONE HC-05 on D3/D4 | sets it as slave and shows its address
+// TOOL (one-time setup, not final) | board: FORKLIFT board (or any UNO) + ONE HC-05 on D2/D3 | sets it as slave and shows its address
 // ====================================================================================================
 /*
  * tool_bluetooth_hc05_forklift_setup.ino  -  지게차 보드용 HC-05 설정 + 주소 표시 (tool_bluetooth_hc05_setup 을 바탕으로 줄임)
  *
  * 지게차 쪽 HC-05 를 슬레이브(ROLE=0)로 만들고, 센터의 모듈 B(마스터)가 BIND 할 주소를 읽어서 보여 준다.
- * 배선 (사용자 지정): 모듈 RXD -> D3, 모듈 TXD -> D4  (아두이노가 D4 로 받고 D3 으로 보낸다).
+ * 배선 (사용자 지정 2026-11-26): 아두이노 RX = D2, TX = D3  ->  모듈 TXD -> D2, 모듈 RXD -> D3 (SoftwareSerial(2, 3), 이 저장소의 test_forklift_bluetooth 와 같은 표기).
  *   D3(아두이노 송신) -> 모듈 RXD 는 3.3V 신호가 필요하므로 1K/2K 분압 권장 (martyncurrey: RX 는 분압, TX 는 직결).
- *   이 핀은 "설정할 때만" 쓴다. final_forklift_board 는 D4 를 IR 발신기로 쓰고 블루투스는 D0/D1 이므로, 설정이 끝나면 배선을 원래대로 돌려야 한다.
- * AT 모드 (EN/STATE 만 있는 ZS-040 형 보드): 보드의 작은 버튼을 누른 채 전원을 넣고 LED 가 약 2초에 한 번 깜빡이면 AT 모드.
- *   (EN 은 연결하지 않는다. 3/4 번 메뉴는 버튼을 계속 누르고 있어야 하는 경우가 있음: martyncurrey)
+ *   반대로 연결했다면 아래 PIN_MODULE_TXD 와 PIN_MODULE_RXD 숫자를 서로 바꾼다.
+ *   이 핀은 "설정할 때만" 쓴다. final_forklift_board 는 블루투스를 D0/D1 로 쓰므로, 설정이 끝나면 배선을 원래대로 돌려야 한다.
+ * AT 모드 (사용자 보드: 버튼 없음, KEY 핀 없음, EN/STATE 만 있음):
+ *   Arduino 포럼 글(forum.arduino.cc/t/setting-hc05-zs-040-to-at-mode-code-example/1059616)의 방법: EN 핀을 3.3V 에 연결(5V 는 안 됨)한 채로
+ *   전원을 넣으면 AT 모드 (그 글: LED 가 약 3초 켜지고 3초 꺼짐, 38400 baud, 첫 "AT" 에 ERROR:(0) 이 나올 수 있고 다시 보내면 OK).
+ *   !! 한 사용자의 글이며 이 모듈에서 확인된 것이 아니다. martyncurrey.com/?p=1895 는 "EN 을 LOW 로 하면 모듈이 꺼진다"고만 적고 이 방법은 다루지 않는다.
+ *   안 되면 그 글과 달리 모듈 칩 34번 핀에 3.3V 를 직접 연결해야 하는 보드일 수 있다 (martyncurrey: 버튼이 34번 핀에 3.3V 를 연결함).
  * 사용법: 시리얼 모니터 9600 bps. 메뉴:
  *   1 지게차 모듈 설정: ROLE=0 (슬레이브) / 데이터 속도 9600 / 이름 / 비밀번호(PSWD) -> 끝나면 주소를 보여 줌
  *   2 주소 보기: AT+ADDR? -> 화면에 "BIND 용" 쉼표 형식도 함께 표시 (센터 tool_bluetooth_hc05_setup 의 3번 메뉴에 그대로 입력)
@@ -26,9 +30,9 @@
 #include <string.h>
 #include <stdio.h>
 
-// ---------------- 핀맵 (사용자 지정: 모듈 RXD = 3, 모듈 TXD = 4) ----------------
-const uint8_t PIN_MODULE_TXD = 4;   // 모듈 TXD 연결 (아두이노가 수신)
-const uint8_t PIN_MODULE_RXD = 3;   // 모듈 RXD 연결 (아두이노가 송신, 분압 권장)
+// ---------------- 핀맵 (사용자 지정: 아두이노 RX = 2, TX = 3) ----------------
+const uint8_t PIN_MODULE_TXD = 2;   // 모듈 TXD 연결 (아두이노가 수신 = RX)
+const uint8_t PIN_MODULE_RXD = 3;   // 모듈 RXD 연결 (아두이노가 송신 = TX, 분압 권장)
 
 // ---------------- 상수 ----------------
 const long USB_BAUD        = 9600;    // 시리얼 모니터
@@ -151,7 +155,8 @@ bool parseAddress(char *addr, char *bindForm, size_t outSize) {  // ◆ NEW
 void showAddress() {  // ◆ NEW
   char addr[ADDR_MAX], bindForm[ADDR_MAX];
   if (!sendAt("AT+ADDR?", REPLY_TIMEOUT_MS)) {
-    Serial.println(F("No address (module not in AT mode? keep the on-board button pressed)"));
+    Serial.println(F("No address (module not in AT mode? see the hint below)"));
+    printFailHint();
     return;
   }
   if (!parseAddress(addr, bindForm, ADDR_MAX)) {
@@ -165,8 +170,14 @@ void showAddress() {  // ◆ NEW
 }
 
 // ---------------- 설정 ----------------
+// 첫 "AT" 에 ERROR:(0) 이 나올 수 있다는 포럼 글 때문에, 실패하면 한 번 더 보낸다
+bool wakeAt() {  // ◆ NEW
+  if (sendAt("AT", REPLY_TIMEOUT_MS)) return true;
+  return sendAt("AT", REPLY_TIMEOUT_MS);
+}
+
 bool setupForkliftModule() {  // ◆ NEW: 슬레이브, 9600, 이름, 비밀번호
-  if (!sendAt("AT", REPLY_TIMEOUT_MS)) return false;
+  if (!wakeAt()) return false;
   if (!sendAt("AT+ROLE=0", REPLY_TIMEOUT_MS)) return false;
   if (!sendUartCmd()) return false;
   if (!sendAtFmt("AT+NAME=%s", FORKLIFT_NAME)) return false;
@@ -174,7 +185,7 @@ bool setupForkliftModule() {  // ◆ NEW: 슬레이브, 9600, 이름, 비밀번�
 }
 
 void printFailHint() {  // ◆ NEW
-  Serial.println(F("Failed? Full AT mode needs pin 34 HIGH: keep the on-board button pressed (mini mode runs only some commands)"));
+  Serial.println(F("Failed? AT mode: EN to 3.3V (NOT 5V) BEFORE power-up, 38400 baud; send AT again if the 1st reply is ERROR (forum report, unverified)"));
 }
 
 void runForkliftSetup() {  // ◆ NEW
@@ -188,7 +199,7 @@ void runForkliftSetup() {  // ◆ NEW
 }
 
 void showSettings() {  // ◆ NEW
-  sendAt("AT", REPLY_TIMEOUT_MS);
+  wakeAt();
   sendAt("AT+VERSION?", REPLY_TIMEOUT_MS);
   sendAt("AT+ADDR?", REPLY_TIMEOUT_MS);
   sendAt("AT+ROLE?", REPLY_TIMEOUT_MS);
@@ -199,12 +210,12 @@ void showSettings() {  // ◆ NEW
 
 // ---------------- 메뉴 ----------------
 void printMenu() {
-  Serial.println(F("\n== Forklift HC-05 setup (module RXD=D3, TXD=D4) =="));
+  Serial.println(F("\n== Forklift HC-05 setup (module TXD=D2, RXD=D3) =="));
   Serial.println(F("1 Set as slave (9600, name, PSWD) and show address"));
   Serial.println(F("2 Show address (AT+ADDR?)"));
   Serial.println(F("3 Show settings   4 AT+RESET"));
   Serial.println(F("Or type a line starting with AT to send it as is"));
-  Serial.println(F("Board with EN/STATE only: power up while holding the on-board button, keep holding"));
+  Serial.println(F("No button/KEY: tie EN to 3.3V (NOT 5V) before powering up, then use 1/2/3"));
 }
 
 void handleLine(const char *line) {  // ◆ NEW
