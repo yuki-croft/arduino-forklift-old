@@ -12,6 +12,7 @@ Test code is under `tests/`, one-time tools under `tools/`. Single-file sketches
 | `final_phone_app_android/` | **FINAL** | Android phone | controller app (Java, Android Studio project), **never built or run**, see its README |
 | `tools/` | TOOL (one-time) | see rows below | `tool_bluetooth_hc05_setup.ino` (menu-driven AT setup of the two center-board HC-05 modules; wiring picture `wiring_hc05_setup.png`), `tool_bluetooth_hc06_forklift_setup.ino` (forklift board, HC-06 soldered: no serial monitor, reports by buzzer: long beep = OK, N short low beeps = failed step N), `tool_bluetooth_at_setup.ino` (plain AT pass-through bridge) |
 | `tests/test_forklift_board_hardware/` | TEST (on a board) | forklift UNO, USB serial monitor | one stand-alone `.ino` per part (table below; 9 files); not the final program |
+| `tests/test_3s_flow/` | TEST (on boards) | forklift UNO + center UNO | pair for a flow check before the map: `test_final_forklift_3s.ino` (3 s forward, line sensors only recognize, then load = fork up, unload = fork down, same Bluetooth letters as final) and `test_final_center_3s.ino` (single-file copy of the final center code) |
 | `tests/test_pc/` | TEST (on a PC) | none (runs on this computer) | fake-sensor logic tests: `bash tests/test_pc/run_all_pc_tests.sh` (needs g++, python3, javac) |
 | `map/` | design | none | `map/` = first layout proposal (images + generator `python3 map/make_map.py`, needs matplotlib); `map/map_final/` = final map (150x150 pinwheel base, 100x100 line loop; redraw with `python3 map/map_final/make_base150.py`); `map/old_cutplans/` = earlier cut plans |
 
@@ -34,7 +35,7 @@ Open **one file at a time** (each is its own sketch = **one `.ino` file**: the u
 
 ## Status (honest)
 - The junction / corner / marker detection (`final_forklift_board/forklift_line_pattern.h`) is a temporary rule built on assumed sensor values, tested only on synthetic traces (`tests/test_pc/line_pattern/`). Measured so far: black line 31 or more (max about 35), white floor about 24-29; real A2/A3/A4 recordings at the straight line, T-junction and start marker are still missing.
-- Verified on a PC only (fake sensors/time and stub Arduino headers, not the Arduino toolchain): `bash tests/test_pc/run_all_pc_tests.sh` passed (9 suites) on 2026-11-26.
+- Verified on a PC only (fake sensors/time and stub Arduino headers, not the Arduino toolchain): `bash tests/test_pc/run_all_pc_tests.sh` passed (10 suites) on 2026-11-26.
 - **Not verified:** Arduino IDE compile, upload, any run of the final code on real boards. The hardware sketches were run on the forklift by the user (all fine except the lift direction, now inverted).
 - **Not implemented for real:** `senseJunction`, `senseCorner`, `senseMarker` in `final_forklift_board/forklift_sense.ino` use the temporary rule above, and its reference value (40) is above the measured black maximum, so on the real sensor it would detect nothing until measurements replace it (open item 20 in the 1-pager).
 - Unmeasured values are `TODO` constants (lift heights, turn time, rear-stop and light-tracking values).

@@ -20,6 +20,7 @@ run_suite "tool_bluetooth_hc06_forklift_setup (fake HC-06)"  bash "$here/tool_hc
 run_suite "map layout geometry"                             bash -c "cd '$root/map' && python3 -m unittest test_layout"
 run_suite "line pattern detector (synthetic traces)"        bash "$here/line_pattern/run_test_line_pattern.sh"
 run_suite "final map plan (map/map_final)"                  bash "$here/map_final/run_test_map_final.sh"
+run_suite "3 s forward test pair (tests/test_3s_flow)"      bash "$here/flow_3s/run_test_flow_3s.sh"
 
 rm -f "/tmp/pc_test_$$.log"
 status=0
