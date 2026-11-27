@@ -183,12 +183,12 @@ bool reachedMainLine() {  // ◆ NEW: 후진 중 본선을 가로지르는 순�
   return edge;
 }
 
-void runReverse() {  // ◆ NEW: 가지선에서 직진 후진 (라인 보정 없음) -> 본선에서 오른쪽 90도 회전해 진행 방향 복귀
+void runReverse() {  // ◆ NEW: 가지선에서 직진 후진 (라인 보정 없음) -> 본선에서 뒤로 돌며 오른쪽 회전해 진행 방향 복귀 (2026-11-28 사용자)
   if (rearGuard()) return;
   setWheels(-LINE_BASE_SPEED, -LINE_BASE_SPEED);
   if (!reachedMainLine()) return;
   stopWheels();
-  turnRight();
+  reverseTurnRight();
   junctionCount = 0;
   junctionLatched = false;
   markerArmed = false;   // 본선을 가로지른 "세 센서 검정" 을 시작 표식으로 착각하지 않게, 흰 바닥을 본 뒤에 다시 켠다 (2026-11-28)

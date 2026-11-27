@@ -24,10 +24,28 @@ for v in center_line two_lines; do
   echo "$v: all tabs syntax OK"
   # state machine test (logic/comm tabs are the same as final_forklift_board; run it on this folder's copy)
   python3 "$fl/make_prototypes.py" "$w/forklift_comm.inc" "$w/forklift_logic.inc" > "$w/protos2.inc"
-  cat "$fl/hook_protos.inc" >> "$w/protos2.inc"; cp "$w/protos2.inc" "$w/protos.inc"
+  sed 's/void turnRight();/void turnRight(); void reverseTurnRight();/' "$fl/hook_protos.inc" >> "$w/protos2.inc"; cp "$w/protos2.inc" "$w/protos.inc"
   # variants (2026-11-28): reversing out of a branch ends when all three sensors are black (senseMarker), not senseJunction
   sed -E 's/pulse\(gJunction,3\); expect\("main line/pulse(gMarker,3); expect("main line/' "$fl/test_forklift_logic.cpp" > "$w/test_forklift_logic.cpp"
   grep -c 'pulse(gMarker,3); expect("main line' "$w/test_forklift_logic.cpp" | grep -qx 2
+  # variants: the turn after reversing is the backward pivot reverseTurnRight (fake logs its own name)
+  sed -i -e 's|^void turnRight(){ ev.push_back("turnRight"); }|&\nvoid reverseTurnRight(){ ev.push_back("reverseTurnRight"); }|' \
+         -e 's|expect("main line reached: turn right, TO_UNLOAD|expect("main line reached: backward right pivot, TO_UNLOAD|' \
+         -e 's|backward right pivot, TO_UNLOAD .m., target = 2", had("turnRight")|&|' "$w/test_forklift_logic.cpp"
+  python3 - "$w/test_forklift_logic.cpp" <<'PY'
+import sys
+p=sys.argv[1]; s=open(p).read()
+a='expect("main line reached: backward right pivot, TO_UNLOAD \'m\', target = 2", had("turnRight")'
+assert a in s, "pattern"
+s=s.replace(a, a.replace('had("turnRight")','had("reverseTurnRight") && !had("turnRight")'))
+s=s.replace('expect("main line again: RETURN \'r\'", state==S_RETURN', 'expect("main line again: backward pivot, RETURN \'r\'", had("reverseTurnRight") && state==S_RETURN')
+assert 'void reverseTurnRight(){' in s
+open(p,'w').write(s)
+PY
+  # the state-machine test steps 10 ms at a time and expects an instant lift: run it with the lift off (LIFT_STROKE_CM = 0);
+  # the real lift heights are checked separately below
+  sed -i -E 's/^constexpr float LIFT_STROKE_CM( +)= [0-9.]+;/constexpr float LIFT_STROKE_CM\1= 0.0;/' "$w/main.inc"
+  grep -q '^constexpr float LIFT_STROKE_CM *= 0.0;' "$w/main.inc"
   g++ -std=c++11 -I"$w" -DSRC_MAIN='"main.inc"' -DSRC_COMM='"forklift_comm.inc"' -DSRC_LOGIC='"forklift_logic.inc"' "$w/test_forklift_logic.cpp" -o "$w/tl"
   "$w/tl" > "$w/tl.log" && echo "$v: state machine test passed ($(grep -c '^PASS' "$w/tl.log" || true) checks)" || { cat "$w/tl.log"; exit 1; }
 done
@@ -38,3 +56,26 @@ g++ -std=c++11 -Wall -Wextra -I"$work" "$work/test_line_variants.cpp" -o "$work/
 g++ -std=c++11 -Wall -Wextra -DVARIANT_B=1 -I"$work" "$work/test_line_variants.cpp" -o "$work/tb" && "$work/tb"
 awk '/^int laneLastNet/ {f=1} f {print} f && /^}/ {exit}' "$root/final_forklift_board_two_lines/forklift_hw.ino" > "$work/lane_steer.inc"
 g++ -std=c++11 -Wall -Wextra -I"$work" "$work/test_lane_steer.cpp" -o "$work/ts" && "$work/ts"
+
+# lift heights from the user's numbers (2026-11-28): fork 4.5 cm .. 12.5 cm over 8 s, racks 5 / 12 cm, "slightly" = 0.5 cm, pick 1 cm
+for v in center_line two_lines; do
+  f="$root/final_forklift_board_$v/final_forklift_board_$v.ino"
+  { echo '#include <cstdio>'
+    grep -E '^constexpr unsigned long LIFT_FULL_STROKE_MS' "$f"
+    awk '/^constexpr float LIFT_STROKE_CM/ {p=1} p && /^const unsigned long LIFT_CARRY_MS/ {exit} p {print}' "$f"
+    cat <<'CPP'
+static int fails = 0;
+static void expect(const char *n, bool ok) { printf("%s  %s\n", ok ? "PASS" : "FAIL", n); if (!ok) fails++; }
+int main() {
+  expect("lower rack: enter at 5.5 cm = 1000 ms", LIFT_LOWER_MS == 1000);
+  expect("upper rack: enter at 12.5 cm = 8000 ms (top)", LIFT_UPPER_MS == 8000);
+  expect("pick 1 cm = 1000 ms", LIFT_PICK_MS == 1000);
+  expect("drop on lower rack at 4.5 cm = 0 ms (bottom)", LIFT_LOWER_DROP_MS == 0);
+  expect("drop on upper rack at 11.5 cm = 7000 ms", LIFT_UPPER_DROP_MS == 7000);
+  expect("upper pick would need 9000 ms > 8000 ms full stroke (gets clipped)", LIFT_UPPER_MS + LIFT_PICK_MS > LIFT_FULL_STROKE_MS);
+  return fails ? 1 : 0;
+}
+CPP
+  } > "$work/lift_$v.cpp"
+  g++ -std=c++11 -Wall "$work/lift_$v.cpp" -o "$work/lift_$v" && "$work/lift_$v" | sed "s/^/$v: /"
+done

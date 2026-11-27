@@ -113,6 +113,21 @@ void spinUntilLine(int dir) {  // ◆ NEW
   stopWheels();
 }
 
+// ◆ NEW (2026-11-28 사용자: "왼쪽 가지에서 후진하면 들어갔던 것처럼 뒤로 회전해야 앞으로 갈 수 있다")
+// 뒤로 가면서 도는 회전: 한쪽 바퀴는 멈추고 다른 쪽만 뒤로. dir +1 = 오른쪽(시계 방향), -1 = 왼쪽.
+// 시계 방향: 오른쪽 바퀴만 뒤로 -> 왼쪽 바퀴를 축으로 뒤로 돌며 머리가 오른쪽으로 감 (왼쪽 가지에서 원래 진행 방향으로 복귀)
+// 멈추는 조건은 제자리 회전과 같음. 회전 반경/멈추는 위치가 실물에 맞는지는 미확인 (?? TODO ??)
+void pivotBackUntilLine(int dir) {
+  if (dir > 0) setWheels(0, -TURN_SPEED);
+  else         setWheels(-TURN_SPEED, 0);
+  unsigned long start = millis();
+  while (millis() - start < TURN_MIN_MS) { }
+  while (millis() - start < TURN_TIMEOUT_MS && !laneFound()) { }
+  stopWheels();
+}
+
+void reverseTurnRight() { pivotBackUntilLine(+1); }   // ◆ NEW
+
 void turnLeft()  { spinUntilLine(-1); }   // ◆ NEW
 void turnRight() { spinUntilLine(+1); }   // ◆ NEW
 

@@ -80,8 +80,10 @@ const unsigned long REAR_HOLD_MS = 1000;     // 기준 이하가 이 시간 지�
 // 리프트 높이 (2026-11-28 사용자): 랙 하단 5cm, 상단 12cm. 포크를 선반보다 살짝 위로 맞춰 들어가 1cm 더 올리고, 후진한 뒤 내린다.
 //   시작 지점(첫 표식)에서는 리프트를 최하단에 두고 시작한다 (사용자) -> 전원을 켤 때 위치 = 0 으로 본다.
 //   리프트는 시간으로 높이를 추정한다: 최소~최대 LIFT_FULL_STROKE_MS (8초). 그 8초 동안 올라가는 높이(cm)는 아직 모름.
-constexpr float LIFT_STROKE_CM     = 0.0;   // ?? TODO ??: 최하단~최상단 포크 이동 높이(cm). 0 이면 리프트를 움직이지 않음 (안전). 재서 넣을 것
-constexpr float LIFT_BASE_CM       = 0.0;   // ?? TODO ??: 최하단일 때 포크 윗면의 바닥 기준 높이(cm)
+constexpr float LIFT_STROKE_CM     = 8.0;   // 사용자 (2026-11-28): 최하단 4.5cm ~ 최상단 12.5cm = 8cm (LIFT_FULL_STROKE_MS 8초 동안)
+constexpr float LIFT_BASE_CM       = 4.5;   // 사용자 (2026-11-28): 최하단 포크 높이 4.5cm
+//   주의: 상단 랙 12cm + 살짝 위 0.5cm = 12.5cm = 최상단. 그 위로 1cm 더 올릴 수 없다 (setLiftTarget 이 최상단에서 자름).
+//   그래서 상단 칸에서 짐을 들 때는 실제로는 거의 들리지 않는다 (사용자 확인 필요, PROBLEM_1PAGER 참고).
 constexpr float RACK_LOWER_CM      = 5.0;   // 사용자: 하단 랙 높이
 constexpr float RACK_UPPER_CM      = 12.0;  // 사용자: 상단 랙 높이
 constexpr float LIFT_ABOVE_CM      = 0.5;   // ?? TODO ??: "살짝 위로" 의 크기 (제 임시값). 하차 때 "살짝 아래" 에도 같은 값 사용
