@@ -22,6 +22,7 @@ run_suite "tool_bluetooth_hc05_factory_reset (fake HC-05)"   bash "$here/tool_hc
 run_suite "map layout geometry"                             bash -c "cd '$root/map' && python3 -m unittest test_layout"
 run_suite "line pattern detector (synthetic traces)"        bash "$here/line_pattern/run_test_line_pattern.sh"
 run_suite "final map plan (map/map_final)"                  bash "$here/map_final/run_test_map_final.sh"
+run_suite "forklift line variants A (center on line) / B (two lines)" bash "$here/forklift_variants/run_test_forklift_variants.sh"
 run_suite "3 s forward test pair (tests/test_3s_flow)"      bash "$here/flow_3s/run_test_flow_3s.sh"
 
 rm -f "/tmp/pc_test_$$.log"
