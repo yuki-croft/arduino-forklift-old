@@ -75,21 +75,20 @@ const unsigned long REAR_HOLD_MS = 1000;     // 기준 이하가 이 시간 지�
 //   리프트는 시간으로 높이를 추정한다: 최소~최대 LIFT_FULL_STROKE_MS (8초). 그 8초 동안 올라가는 높이(cm)는 아직 모름.
 constexpr float LIFT_STROKE_CM     = 8.0;   // 사용자 (2026-11-28): 최하단 4.5cm ~ 최상단 12.5cm = 8cm (LIFT_FULL_STROKE_MS 8초 동안)
 constexpr float LIFT_BASE_CM       = 4.5;   // 사용자 (2026-11-28): 최하단 포크 높이 4.5cm
-//   주의: 상단 랙 12cm + 살짝 위 0.5cm = 12.5cm = 최상단. 그 위로 1cm 더 올릴 수 없다 (setLiftTarget 이 최상단에서 자름).
-//   그래서 상단 칸에서 짐을 들 때는 실제로는 거의 들리지 않는다 (사용자 확인 필요, PROBLEM_1PAGER 참고).
+//   상단 칸: 12cm + 0.2cm = 12.2cm 로 들어가고, 1cm 를 올리려 해도 최상단 12.5cm 에서 멈추므로 실제로는 0.3cm 만 든다 (사용자 승인 2026-11-28).
 constexpr float RACK_LOWER_CM      = 5.0;   // 사용자: 하단 랙 높이
 constexpr float RACK_UPPER_CM      = 12.0;  // 사용자: 상단 랙 높이
-constexpr float LIFT_ABOVE_CM      = 0.5;   // ?? TODO ??: "살짝 위로" 의 크기 (제 임시값). 하차 때 "살짝 아래" 에도 같은 값 사용
+constexpr float LIFT_ABOVE_CM      = 0.2;   // 사용자 (2026-11-28): "살짝 위" = 0.2cm. 하차 때 "살짝 아래" 에도 같은 값 사용
 constexpr float LIFT_PICK_CM       = 1.0;   // 사용자: 들어 올리는 높이 1cm
 constexpr unsigned long liftCmToMs(float cm) {   // ◆ NEW: 포크 높이(cm) -> 최하단에서 올리는 시간(ms). 모르는 값이면 0
   return (LIFT_STROKE_CM <= 0.0 || cm <= LIFT_BASE_CM) ? 0UL
-       : (unsigned long)((cm - LIFT_BASE_CM) * LIFT_FULL_STROKE_MS / LIFT_STROKE_CM);
+       : (unsigned long)((cm - LIFT_BASE_CM) * LIFT_FULL_STROKE_MS / LIFT_STROKE_CM + 0.5f);   // 반올림 (float 오차로 7699 가 되지 않게)
 }
 const unsigned long LIFT_UPPER_MS      = liftCmToMs(RACK_UPPER_CM + LIFT_ABOVE_CM);   // 2층: 들어갈 때 / 상차 전
 const unsigned long LIFT_LOWER_MS      = liftCmToMs(RACK_LOWER_CM + LIFT_ABOVE_CM);   // 1층
 const unsigned long LIFT_UPPER_DROP_MS = liftCmToMs(RACK_UPPER_CM - LIFT_ABOVE_CM);   // 2층에 내려놓을 때
 const unsigned long LIFT_LOWER_DROP_MS = liftCmToMs(RACK_LOWER_CM - LIFT_ABOVE_CM);   // 1층에 내려놓을 때
-const unsigned long LIFT_PICK_MS = (LIFT_STROKE_CM > 0.0) ? (unsigned long)(LIFT_PICK_CM * LIFT_FULL_STROKE_MS / LIFT_STROKE_CM) : 0UL;  // 1cm
+const unsigned long LIFT_PICK_MS = (LIFT_STROKE_CM > 0.0) ? (unsigned long)(LIFT_PICK_CM * LIFT_FULL_STROKE_MS / LIFT_STROKE_CM + 0.5f) : 0UL;  // 1cm (상단 칸은 최상단에서 잘려 0.3cm)
 const unsigned long LIFT_CARRY_MS = 0;       // 후진해서 본선에 오면 최하단까지 내림 (사용자: "후진해서 내리면 돼")
 
 // ---------------- 상태 번호 ----------------

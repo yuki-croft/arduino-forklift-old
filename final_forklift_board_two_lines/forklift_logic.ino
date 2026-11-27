@@ -132,7 +132,7 @@ void arriveAtCell() {  // ◆ NEW: 목표 교차점 도착 -> 왼쪽 가지선�
     delay(JUNCTION_ADVANCE_MS);
     stopWheels();
   }
-  turnLeft();
+  pivotTurnLeft();   // 2026-11-28 사용자: 가지 진입은 축 회전
   int8_t cell = carrying ? unloadCell : loadCell;
   setLiftTarget(shelfLiftMs(cell) + (carrying ? (long)LIFT_PICK_MS : 0L));   // 하차는 선반 위로 띄워서 진입
   junctionCount = 0;

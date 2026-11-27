@@ -96,20 +96,21 @@ void spinUntilLine(int dir) {  // ◆ NEW
   stopWheels();
 }
 
-// ◆ NEW (2026-11-28 사용자: "왼쪽 가지에서 후진하면 들어갔던 것처럼 뒤로 회전해야 앞으로 갈 수 있다")
-// 뒤로 가면서 도는 회전: 한쪽 바퀴는 멈추고 다른 쪽만 뒤로. dir +1 = 오른쪽(시계 방향), -1 = 왼쪽.
-// 시계 방향: 오른쪽 바퀴만 뒤로 -> 왼쪽 바퀴를 축으로 뒤로 돌며 머리가 오른쪽으로 감 (왼쪽 가지에서 원래 진행 방향으로 복귀)
-// 멈추는 조건은 제자리 회전과 같음. 회전 반경/멈추는 위치가 실물에 맞는지는 미확인 (?? TODO ??)
-void pivotBackUntilLine(int dir) {
-  if (dir > 0) setWheels(0, -TURN_SPEED);
-  else         setWheels(-TURN_SPEED, 0);
+// ◆ NEW (2026-11-28 사용자): 가지로 들어갈 때는 "축 회전" (한쪽 바퀴는 멈추고 다른 쪽만 움직임),
+//   가지에서 후진해 나올 때는 들어간 길을 거꾸로 되짚는 뒤로 축 회전.
+//   들어갈 때 (왼쪽): 왼쪽 바퀴 정지 + 오른쪽 바퀴 앞으로 -> 왼쪽 바퀴를 축으로 머리가 왼쪽으로 감
+//   나올 때 (오른쪽): 왼쪽 바퀴 정지 + 오른쪽 바퀴 뒤로   -> 같은 축으로 거꾸로 돌아 원래 진행 방향
+//   멈추는 조건은 제자리 회전과 같음. 회전 반경/멈추는 위치가 실물에 맞는지는 미확인 (?? TODO ??)
+void pivotUntilLine(int speedLeft, int speedRight) {
+  setWheels(speedLeft, speedRight);
   unsigned long start = millis();
   while (millis() - start < TURN_MIN_MS) { }
   while (millis() - start < TURN_TIMEOUT_MS && analogRead(PIN_LINE_CENTER) < LINE_BLACK_MIN) { }
   stopWheels();
 }
 
-void reverseTurnRight() { pivotBackUntilLine(+1); }   // ◆ NEW
+void pivotTurnLeft()    { pivotUntilLine(0, TURN_SPEED); }    // ◆ NEW: 가지 진입 (왼쪽 바퀴 축)
+void reverseTurnRight() { pivotUntilLine(0, -TURN_SPEED); }   // ◆ NEW: 가지에서 나옴 (같은 축, 뒤로)
 
 void turnLeft()  { spinUntilLine(-1); }   // ◆ NEW
 void turnRight() { spinUntilLine(+1); }   // ◆ NEW

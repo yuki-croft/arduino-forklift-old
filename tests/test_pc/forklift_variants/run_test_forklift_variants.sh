@@ -24,12 +24,12 @@ for v in center_line two_lines; do
   echo "$v: all tabs syntax OK"
   # state machine test (logic/comm tabs are the same as final_forklift_board; run it on this folder's copy)
   python3 "$fl/make_prototypes.py" "$w/forklift_comm.inc" "$w/forklift_logic.inc" > "$w/protos2.inc"
-  sed 's/void turnRight();/void turnRight(); void reverseTurnRight();/' "$fl/hook_protos.inc" >> "$w/protos2.inc"; cp "$w/protos2.inc" "$w/protos.inc"
+  sed 's/void turnRight();/void turnRight(); void reverseTurnRight(); void pivotTurnLeft();/' "$fl/hook_protos.inc" >> "$w/protos2.inc"; cp "$w/protos2.inc" "$w/protos.inc"
   # variants (2026-11-28): reversing out of a branch ends when all three sensors are black (senseMarker), not senseJunction
   sed -E 's/pulse\(gJunction,3\); expect\("main line/pulse(gMarker,3); expect("main line/' "$fl/test_forklift_logic.cpp" > "$w/test_forklift_logic.cpp"
   grep -c 'pulse(gMarker,3); expect("main line' "$w/test_forklift_logic.cpp" | grep -qx 2
   # variants: the turn after reversing is the backward pivot reverseTurnRight (fake logs its own name)
-  sed -i -e 's|^void turnRight(){ ev.push_back("turnRight"); }|&\nvoid reverseTurnRight(){ ev.push_back("reverseTurnRight"); }|' \
+  sed -i -e 's|^void turnRight(){ ev.push_back("turnRight"); }|&\nvoid reverseTurnRight(){ ev.push_back("reverseTurnRight"); }\nvoid pivotTurnLeft(){ ev.push_back("pivotTurnLeft"); }|' \
          -e 's|expect("main line reached: turn right, TO_UNLOAD|expect("main line reached: backward right pivot, TO_UNLOAD|' \
          -e 's|backward right pivot, TO_UNLOAD .m., target = 2", had("turnRight")|&|' "$w/test_forklift_logic.cpp"
   python3 - "$w/test_forklift_logic.cpp" <<'PY'
@@ -39,7 +39,10 @@ a='expect("main line reached: backward right pivot, TO_UNLOAD \'m\', target = 2"
 assert a in s, "pattern"
 s=s.replace(a, a.replace('had("turnRight")','had("reverseTurnRight") && !had("turnRight")'))
 s=s.replace('expect("main line again: RETURN \'r\'", state==S_RETURN', 'expect("main line again: backward pivot, RETURN \'r\'", had("reverseTurnRight") && state==S_RETURN')
-assert 'void reverseTurnRight(){' in s
+assert 'void reverseTurnRight(){' in s and 'void pivotTurnLeft(){' in s
+a2='expect("target junction reached: turn left, state APPROACH, report \'a\'", had("turnLeft")'
+assert a2 in s, "pattern2"
+s=s.replace(a2,'expect("target junction reached: pivot left (axis turn), state APPROACH, report \'a\'", had("pivotTurnLeft") && !had("turnLeft")')
 open(p,'w').write(s)
 PY
   # the state-machine test steps 10 ms at a time and expects an instant lift: run it with the lift off (LIFT_STROKE_CM = 0);
@@ -57,7 +60,7 @@ g++ -std=c++11 -Wall -Wextra -DVARIANT_B=1 -I"$work" "$work/test_line_variants.c
 awk '/^int laneLastNet/ {f=1} f {print} f && /^}/ {exit}' "$root/final_forklift_board_two_lines/forklift_hw.ino" > "$work/lane_steer.inc"
 g++ -std=c++11 -Wall -Wextra -I"$work" "$work/test_lane_steer.cpp" -o "$work/ts" && "$work/ts"
 
-# lift heights from the user's numbers (2026-11-28): fork 4.5 cm .. 12.5 cm over 8 s, racks 5 / 12 cm, "slightly" = 0.5 cm, pick 1 cm
+# lift heights from the user's numbers (2026-11-28): fork 4.5 cm .. 12.5 cm over 8 s, racks 5 / 12 cm, "slightly" = 0.2 cm, pick 1 cm
 for v in center_line two_lines; do
   f="$root/final_forklift_board_$v/final_forklift_board_$v.ino"
   { echo '#include <cstdio>'
@@ -67,12 +70,12 @@ for v in center_line two_lines; do
 static int fails = 0;
 static void expect(const char *n, bool ok) { printf("%s  %s\n", ok ? "PASS" : "FAIL", n); if (!ok) fails++; }
 int main() {
-  expect("lower rack: enter at 5.5 cm = 1000 ms", LIFT_LOWER_MS == 1000);
-  expect("upper rack: enter at 12.5 cm = 8000 ms (top)", LIFT_UPPER_MS == 8000);
-  expect("pick 1 cm = 1000 ms", LIFT_PICK_MS == 1000);
-  expect("drop on lower rack at 4.5 cm = 0 ms (bottom)", LIFT_LOWER_DROP_MS == 0);
-  expect("drop on upper rack at 11.5 cm = 7000 ms", LIFT_UPPER_DROP_MS == 7000);
-  expect("upper pick would need 9000 ms > 8000 ms full stroke (gets clipped)", LIFT_UPPER_MS + LIFT_PICK_MS > LIFT_FULL_STROKE_MS);
+  expect("lower rack: enter at 5.2 cm = 700 ms", LIFT_LOWER_MS == 700);
+  expect("upper rack: enter at 12.2 cm = 7700 ms (rounded, not 7699)", LIFT_UPPER_MS == 7700);
+  expect("pick 1 cm = 1000 ms (lower rack lifts to 6.2 cm = 1700 ms)", LIFT_PICK_MS == 1000 && LIFT_LOWER_MS + LIFT_PICK_MS == 1700);
+  expect("upper rack pick is clipped at the top: 8000 - 7700 = 300 ms = 0.3 cm", LIFT_FULL_STROKE_MS - LIFT_UPPER_MS == 300);
+  expect("drop on lower rack at 4.8 cm = 300 ms", LIFT_LOWER_DROP_MS == 300);
+  expect("drop on upper rack at 11.8 cm = 7300 ms", LIFT_UPPER_DROP_MS == 7300);
   return fails ? 1 : 0;
 }
 CPP
