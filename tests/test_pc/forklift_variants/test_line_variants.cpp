@@ -26,7 +26,7 @@ int main() {
   auto e = run(cat({rep(lane, 10), rep(leftGap, 6), rep(lane, 10)}));
   expect("B: left line broken for 6 samples then back -> JUNCTION_LEFT", e.size() == 1 && e[0] == EV_JUNCTION_LEFT);
   e = run(cat({rep(lane, 10), rep(rightGap, 6), rep(lane, 10)}));
-  expect("B: right line broken then back -> JUNCTION_RIGHT", e.size() == 1 && e[0] == EV_JUNCTION_RIGHT);
+  expect("B: right line broken then back -> CORNER (user: corner = right-branch pattern)", e.size() == 1 && e[0] == EV_CORNER);
   e = run(cat({rep(lane, 10), rep(rightGap, 6), rep(outerAhead, 4)}));
   expect("B: right line broken, then center meets the outer line -> CORNER", e.size() == 1 && e[0] == EV_CORNER);
   e = run(cat({rep(lane, 10), rep(leftGap, 2), rep(lane, 10)}));
@@ -41,7 +41,7 @@ int main() {
   auto e = run(cat({rep(onLine, 10), rep(leftBranch, 5), rep(onLine, 10)}));
   expect("A: left side black for 5 samples, center stays black -> JUNCTION_LEFT", e.size() == 1 && e[0] == EV_JUNCTION_LEFT);
   e = run(cat({rep(onLine, 10), rep(rightBranch, 5), rep(onLine, 10)}));
-  expect("A: right side black, center stays black -> JUNCTION_RIGHT", e.size() == 1 && e[0] == EV_JUNCTION_RIGHT);
+  expect("A: right side black, center stays black -> CORNER (user: corner = right-branch pattern)", e.size() == 1 && e[0] == EV_CORNER);
   e = run(cat({rep(onLine, 10), rep(rightBranch, 3), rep(cornerOff, 3), rep({27, 27, 27}, 2)}));
   expect("A: right side black, center leaves the line, then right leaves too -> CORNER", e.size() == 1 && e[0] == EV_CORNER);
   e = run(cat({rep(onLine, 10), rep(rightBranch, 2), rep(onLine, 10)}));

@@ -53,7 +53,7 @@ const int  LINE_LEVEL1 = 27;      // 사용자 지정: 직선 보정 1단계 기
 const int  LINE_LEVEL2 = 30;      // 사용자 지정: 직선 보정 2단계 기준
 const int  LINE_WHITE_MAX = 29;   // 사용자 지정 (2026-11-28): 흰 바닥 25~29
 const int  LINE_BLACK_MIN = 30;   // 사용자 지정 (2026-11-28): 검은 선 30~34
-const unsigned long LIFT_FULL_STROKE_MS = 8000UL;  // 최소~최대 높이 총 8초 (제작자 캘리브레이션, 속도는 미확인)
+constexpr unsigned long LIFT_FULL_STROKE_MS = 8000UL;  // 최소~최대 높이 총 8초 (제작자 캘리브레이션, 속도는 미확인)
 
 // ---------------- 상수: 임시값 (?? TODO ??, 실측/확인 후 교체) ----------------
 const bool LINE_STEER_INVERT = true;  // 사용자 지시 "회전은 반전으로". 주행 시험 후 확인
@@ -70,11 +70,25 @@ const float LIGHT_GAIN = 400.0;              // 광 추적 조향 민감도
 const long REAR_STOP_CM = 5;                 // 후방 비상 거리 (사용자: 매우 짧게. 값은 임시)
 const unsigned long REAR_CHECK_MS = 100;     // 후방 초음파 확인 주기 (읽기에 최대 약 20ms)
 const unsigned long REAR_HOLD_MS = 1000;     // 기준 이하가 이 시간 지속되면 비상
-// 리프트 높이: 최소 높이에서 해당 높이까지 올리는 시간 (선반 높이 미확인 -> 0 = 움직이지 않음)
-const unsigned long LIFT_UPPER_MS = 0;       // 2층 선반
-const unsigned long LIFT_LOWER_MS = 0;       // 1층 선반
-const unsigned long LIFT_PICK_MS  = 0;       // 짐을 들어 올리는 추가 높이
-const unsigned long LIFT_CARRY_MS = 0;       // 주행 중 포크 높이 (0 = 최소 높이)
+// 리프트 높이 (2026-11-28 사용자): 랙 하단 5cm, 상단 12cm. 포크를 선반보다 살짝 위로 맞춰 들어가 1cm 더 올리고, 후진한 뒤 내린다.
+//   시작 지점(첫 표식)에서는 리프트를 최하단에 두고 시작한다 (사용자) -> 전원을 켤 때 위치 = 0 으로 본다.
+//   리프트는 시간으로 높이를 추정한다: 최소~최대 LIFT_FULL_STROKE_MS (8초). 그 8초 동안 올라가는 높이(cm)는 아직 모름.
+constexpr float LIFT_STROKE_CM     = 0.0;   // ?? TODO ??: 최하단~최상단 포크 이동 높이(cm). 0 이면 리프트를 움직이지 않음 (안전). 재서 넣을 것
+constexpr float LIFT_BASE_CM       = 0.0;   // ?? TODO ??: 최하단일 때 포크 윗면의 바닥 기준 높이(cm)
+constexpr float RACK_LOWER_CM      = 5.0;   // 사용자: 하단 랙 높이
+constexpr float RACK_UPPER_CM      = 12.0;  // 사용자: 상단 랙 높이
+constexpr float LIFT_ABOVE_CM      = 0.5;   // ?? TODO ??: "살짝 위로" 의 크기 (제 임시값). 하차 때 "살짝 아래" 에도 같은 값 사용
+constexpr float LIFT_PICK_CM       = 1.0;   // 사용자: 들어 올리는 높이 1cm
+constexpr unsigned long liftCmToMs(float cm) {   // ◆ NEW: 포크 높이(cm) -> 최하단에서 올리는 시간(ms). 모르는 값이면 0
+  return (LIFT_STROKE_CM <= 0.0 || cm <= LIFT_BASE_CM) ? 0UL
+       : (unsigned long)((cm - LIFT_BASE_CM) * LIFT_FULL_STROKE_MS / LIFT_STROKE_CM);
+}
+const unsigned long LIFT_UPPER_MS      = liftCmToMs(RACK_UPPER_CM + LIFT_ABOVE_CM);   // 2층: 들어갈 때 / 상차 전
+const unsigned long LIFT_LOWER_MS      = liftCmToMs(RACK_LOWER_CM + LIFT_ABOVE_CM);   // 1층
+const unsigned long LIFT_UPPER_DROP_MS = liftCmToMs(RACK_UPPER_CM - LIFT_ABOVE_CM);   // 2층에 내려놓을 때
+const unsigned long LIFT_LOWER_DROP_MS = liftCmToMs(RACK_LOWER_CM - LIFT_ABOVE_CM);   // 1층에 내려놓을 때
+const unsigned long LIFT_PICK_MS = (LIFT_STROKE_CM > 0.0) ? (unsigned long)(LIFT_PICK_CM * LIFT_FULL_STROKE_MS / LIFT_STROKE_CM) : 0UL;  // 1cm
+const unsigned long LIFT_CARRY_MS = 0;       // 후진해서 본선에 오면 최하단까지 내림 (사용자: "후진해서 내리면 돼")
 
 // ---------------- 상태 번호 ----------------
 const uint8_t S_WAIT = 0, S_TO_LOAD = 1, S_APPROACH = 2, S_LIFT_PICK = 3, S_REVERSE = 4,

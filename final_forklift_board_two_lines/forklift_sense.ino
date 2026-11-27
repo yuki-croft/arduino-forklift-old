@@ -6,7 +6,9 @@
  *   기준값은 제 가정(합성 시험값)이다. 실물에서 맞는지는 확인 전이다.
  *   - senseMarker  : 표식 위에 있는 동안 true (레벨)
  *   - senseCorner / senseJunction : 가지선/모서리를 지난 직후 한 번만 true (펄스, 판별이 끝나는 시점)
- *   - senseJunction 은 왼쪽 구간(segment 1)에서는 왼쪽 가지, 오른쪽 구간(segment 3)에서는 오른쪽 가지만 인정하고 위/아래 구간에서는 항상 false
+ *   - senseJunction 은 왼쪽 구간(segment 1, 상차)과 오른쪽 구간(segment 3, 하차) 모두 "왼쪽 가지"만 인정, 위/아래 구간에서는 항상 false
+ *     (2026-11-28 사용자: "왼쪽 가지는 가지 실행 후 상차나 하차". 시계 방향이라 두 구간 모두 칸이 지게차 왼쪽. 이전 코드는 segment 3 에서 오른쪽 가지를 찾던 오류)
+ *   - 오른쪽 가지 모양은 모서리로 본다 (사용자: "모서리는 오른쪽 가지 값으로")
  *   - 후진 중 본선 인식(reachedMainLine)에 이 규칙이 맞는지는 센서 위치를 몰라 확인하지 못했다.
  */
 
@@ -36,7 +38,7 @@ bool takeLineEvent(LineEvent want) {  // ◆ NEW: 원하는 사건이면 한 번
 }
 
 bool senseJunction() {  // ◆ NEW
-  LineEvent want = (segment == 1) ? EV_JUNCTION_LEFT : (segment == 3 ? EV_JUNCTION_RIGHT : EV_NONE);
+  LineEvent want = (segment == 1 || segment == 3) ? EV_JUNCTION_LEFT : EV_NONE;
   return takeLineEvent(want);
 }
 

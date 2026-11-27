@@ -1,6 +1,7 @@
 /*
  * forklift_line_pattern.h  -  라인 센서 3개(A2 A3 A4) 값으로 교차점 / 모서리 / 시작 표식을 가려내는 순수 계산 (Arduino 함수 호출 없음)
  *
+ * [방식 A, 2026-11-28] 오른쪽 버스트는 가운데 상태와 상관없이 모서리 (사용자: "모서리는 오른쪽 가지 값으로"). 오른쪽 가지 사건은 더 이상 나오지 않음.
  * [방식 A, 2026-11-28] 기준을 사용자 지정값 (검정 30 이상) 으로 바꿈. 아래 원래 설명의 "40" 가정은 이 폴더에서는 쓰지 않는다.
  *   남은 가설: 직선에서 좌/우 센서가 선 가장자리에 걸려 잠깐 30 이상이 되는 것(흔들림)과 가지선을 구분하는 것은
  *   LINE_CONFIRM_SAMPLES 연속 횟수뿐이다. 실제 주행 기록(test_forklift_line_bt)으로 확인해야 한다.
@@ -89,7 +90,7 @@ inline LineEvent lineDetectorStep(LineDetector &d, LineSample s) {
     if (d.side < 0) {
       if (cOn) ev = EV_JUNCTION_LEFT;               // 왼쪽 모서리는 없음: 가운데가 선을 잃었으면 무시
     } else {
-      ev = cOn ? EV_JUNCTION_RIGHT : EV_CORNER;
+      ev = EV_CORNER;                               // 2026-11-28 사용자: 모서리는 오른쪽 가지 값으로 (가운데 상태와 상관없이)
     }
   }
   d.side = 0;

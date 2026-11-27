@@ -11,7 +11,8 @@ uint8_t cellPosition(int8_t cell) { return (cell % 3) + 1; }          // 층 안
 uint8_t loadJunctionCount(int8_t cell)   { return 4 - cellPosition(cell); }  // 상차: 올라가며 지나므로 아래가 1번째
 uint8_t unloadJunctionCount(int8_t cell) { return cellPosition(cell); }      // 하차: 내려오며 지나므로 위가 1번째
 bool cellIsUpper(int8_t cell) { return cell < 3; }                    // '1'~'3', 'A'~'C' = 2층
-long shelfLiftMs(int8_t cell) { return cellIsUpper(cell) ? (long)LIFT_UPPER_MS : (long)LIFT_LOWER_MS; }
+long shelfLiftMs(int8_t cell) { return cellIsUpper(cell) ? (long)LIFT_UPPER_MS : (long)LIFT_LOWER_MS; }   // 선반보다 살짝 위
+long shelfDropMs(int8_t cell)  { return cellIsUpper(cell) ? (long)LIFT_UPPER_DROP_MS : (long)LIFT_LOWER_DROP_MS; }   // ◆ NEW: 선반보다 살짝 아래
 uint8_t targetSegment() { return carrying ? 3 : 1; }                  // 짐을 싣고 있으면 오른쪽(하차), 아니면 왼쪽(상차)
 
 // ---------------- 리프트 (시간으로 높이를 추정, 비차단) ----------------
@@ -152,7 +153,7 @@ void runApproach() {  // ◆ NEW: 포크가 높이에 도달한 뒤 가지선을
   if (!senseCargoAhead()) { driveLineStep(); return; }
   stopWheels();
   if (carrying) {
-    setLiftTarget(shelfLiftMs(unloadCell));                       // 내려놓기
+    setLiftTarget(shelfDropMs(unloadCell));                       // 내려놓기: 선반 윗면보다 조금 아래까지 (짐이 선반에 얹힘)
     state = S_DROP;                                               // 'd' 는 접근 때 이미 보고함
   } else {
     setLiftTarget(shelfLiftMs(loadCell) + (long)LIFT_PICK_MS);    // 들어 올리기
@@ -173,8 +174,10 @@ void runDrop() {  // ◆ NEW
   enterState(S_REVERSE);
 }
 
-bool reachedMainLine() {  // ◆ NEW: 후진 중 교차점 감지 시작 순간
-  bool sensed = senseJunction();
+bool reachedMainLine() {  // ◆ NEW: 후진 중 본선을 가로지르는 순간 (2026-11-28 변경)
+  // 가지선에서 똑바로 후진하면 세 센서가 본선을 동시에 지나므로 "세 센서 모두 검정"(senseMarker) 이 된다.
+  // 이전의 senseJunction(한쪽만 검정) 으로는 이 순간을 잡지 못한다. 센서와 바퀴 위치 차이는 미확인 (?? TODO ??)
+  bool sensed = senseMarker();
   bool edge = sensed && !junctionLatched;
   junctionLatched = sensed;
   return edge;
@@ -188,6 +191,7 @@ void runReverse() {  // ◆ NEW: 가지선에서 직진 후진 (라인 보정 �
   turnRight();
   junctionCount = 0;
   junctionLatched = false;
+  markerArmed = false;   // 본선을 가로지른 "세 센서 검정" 을 시작 표식으로 착각하지 않게, 흰 바닥을 본 뒤에 다시 켠다 (2026-11-28)
   if (dropDone) {
     setLiftTarget(0);
     enterState(S_RETURN);

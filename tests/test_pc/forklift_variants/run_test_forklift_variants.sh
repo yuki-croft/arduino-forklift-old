@@ -20,12 +20,14 @@ for v in center_line two_lines; do
     for f in $others; do cat "$w/$(basename "$f" .ino).inc"; done
     echo 'HardwareSerial Serial;'
   } > "$w/all.cpp"
-  g++ -std=c++11 -fsyntax-only -I"$w" "$w/all.cpp"
+  g++ -std=c++11 -fsyntax-only -Werror=invalid-constexpr -I"$w" "$w/all.cpp"
   echo "$v: all tabs syntax OK"
   # state machine test (logic/comm tabs are the same as final_forklift_board; run it on this folder's copy)
   python3 "$fl/make_prototypes.py" "$w/forklift_comm.inc" "$w/forklift_logic.inc" > "$w/protos2.inc"
   cat "$fl/hook_protos.inc" >> "$w/protos2.inc"; cp "$w/protos2.inc" "$w/protos.inc"
-  cp "$fl/test_forklift_logic.cpp" "$w/"
+  # variants (2026-11-28): reversing out of a branch ends when all three sensors are black (senseMarker), not senseJunction
+  sed -E 's/pulse\(gJunction,3\); expect\("main line/pulse(gMarker,3); expect("main line/' "$fl/test_forklift_logic.cpp" > "$w/test_forklift_logic.cpp"
+  grep -c 'pulse(gMarker,3); expect("main line' "$w/test_forklift_logic.cpp" | grep -qx 2
   g++ -std=c++11 -I"$w" -DSRC_MAIN='"main.inc"' -DSRC_COMM='"forklift_comm.inc"' -DSRC_LOGIC='"forklift_logic.inc"' "$w/test_forklift_logic.cpp" -o "$w/tl"
   "$w/tl" > "$w/tl.log" && echo "$v: state machine test passed ($(grep -c '^PASS' "$w/tl.log" || true) checks)" || { cat "$w/tl.log"; exit 1; }
 done
