@@ -1,6 +1,8 @@
 // Minimal stand-in for the Arduino core, ONLY to syntax-check the test sketches on a PC (g++ -fsyntax-only).
 // Signatures cover just what test_forklift_*/ uses; this is NOT the real Arduino API.
 #pragma once
+#include <cstdlib>
+using std::abs;   // the real Arduino core provides abs()
 #include <stdint.h>
 #include <stddef.h>
 typedef uint8_t byte;
