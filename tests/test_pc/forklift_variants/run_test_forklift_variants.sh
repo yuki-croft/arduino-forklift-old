@@ -6,7 +6,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"; root="$here/../../.."; fl="$here/../forklift_logic"
 work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
 conv() { sed -E 's/#include <([A-Za-z]+\.h)>.*/#include "\1"/' "$1" > "$2"; }
-for v in center_line two_lines; do
+for v in center_line two_lines white_lines; do
   d="$root/final_forklift_board_$v"; w="$work/$v"; mkdir -p "$w"
   cp "$fl"/fake_arduino_headers/*.h "$d/forklift_line_pattern.h" "$w/"
   conv "$d/final_forklift_board_$v.ino" "$w/main.inc"
@@ -64,7 +64,7 @@ awk '/^int laneLastNet/ {f=1} f {print} f && /^}/ {exit}' "$root/final_forklift_
 g++ -std=c++11 -Wall -Wextra -I"$work" "$work/test_lane_steer.cpp" -o "$work/ts" && "$work/ts"
 
 # lift heights from the user's numbers (2026-11-28): fork 4.5 cm .. 12.5 cm over 8 s, racks 5 / 12 cm, "slightly" = 0.2 cm, pick 1 cm
-for v in center_line two_lines; do
+for v in center_line two_lines white_lines; do
   f="$root/final_forklift_board_$v/final_forklift_board_$v.ino"
   { echo '#include <cstdio>'
     grep -E '^constexpr unsigned long LIFT_FULL_STROKE_MS' "$f"
@@ -85,3 +85,29 @@ CPP
   } > "$work/lift_$v.cpp"
   g++ -std=c++11 -Wall "$work/lift_$v.cpp" -o "$work/lift_$v" && "$work/lift_$v" | sed "s/^/$v: /"
 done
+
+# variant C (white lines on a black floor): lineRead mirrors the raw value, then the B steering runs unchanged
+awk '/^int lineRead/ {f=1} f {print} f && /^void lineSteer/ {g=1} g && /^}/ {exit}' "$root/final_forklift_board_white_lines/forklift_hw.ino" > "$work/white_steer.inc"
+cat > "$work/test_white.cpp" <<'CPP'
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
+const int LINE_WHITE_MAX = 29, LINE_BLACK_MIN = 30, LINE_MIRROR_SUM = 59, LINE_BASE_SPEED = 60, LINE_TRIM_1 = 5, LINE_TRIM_2 = 15, LANE_DIFF_1 = 1, LANE_DIFF_2 = 3;
+const bool LANE_STEER_INVERT = false;
+static int raw[3]; enum { L = 0, C = 1, R = 2 };
+int analogRead(uint8_t pin) { return raw[pin]; }
+#include "white_steer.inc"
+static int fails = 0;
+static void expect(const char *n, bool ok) { printf("%s  %s\n", ok ? "PASS" : "FAIL", n); if (!ok) fails++; }
+static void steer(int l, int c, int r, int &sl, int &sr) { raw[L] = l; raw[C] = c; raw[R] = r; lineSteer(lineRead(L), lineRead(C), lineRead(R), sl, sr); }
+int main() {
+  raw[L] = 27; raw[C] = 32;
+  expect("C mirror: white tape 27 -> 32 (line), black floor 32 -> 27 (floor)", lineRead(L) == 32 && lineRead(C) == 27);
+  int sl, sr;
+  steer(27, 32, 27, sl, sr); expect("C steer: both on white lines, center on black floor -> straight", sl == 60 && sr == 60);
+  steer(32, 32, 27, sl, sr); expect("C steer: left sensor slid onto the black floor (drifted right) -> turn left", sl < 60 && sr == 60);
+  steer(27, 32, 32, sl, sr); expect("C steer: right sensor on the black floor (drifted left) -> turn right", sl == 60 && sr < 60);
+  return fails ? 1 : 0;
+}
+CPP
+g++ -std=c++11 -Wall -I"$work" "$work/test_white.cpp" -o "$work/tw" && "$work/tw"
