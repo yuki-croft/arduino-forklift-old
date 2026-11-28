@@ -28,6 +28,9 @@ for v in center_line two_lines; do
   # variants (2026-11-28): reversing out of a branch ends when all three sensors are black (senseMarker), not senseJunction
   sed -E 's/pulse\(gJunction,3\); expect\("main line/pulse(gMarker,3); expect("main line/' "$fl/test_forklift_logic.cpp" > "$w/test_forklift_logic.cpp"
   grep -c 'pulse(gMarker,3); expect("main line' "$w/test_forklift_logic.cpp" | grep -qx 2
+  # variants (2026-11-28): slower wheels, reverse uses -LINE_BASE_SPEED (60)
+  sed -i 's|expect("reverses straight", had("wheels -100 -100"));|expect("reverses straight at the slow speed", had("wheels -60 -60"));|' "$w/test_forklift_logic.cpp"
+  grep -q 'had("wheels -60 -60")' "$w/test_forklift_logic.cpp"
   # variants: the turn after reversing is the backward pivot reverseTurnRight (fake logs its own name)
   sed -i -e 's|^void turnRight(){ ev.push_back("turnRight"); }|&\nvoid reverseTurnRight(){ ev.push_back("reverseTurnRight"); }\nvoid pivotTurnLeft(){ ev.push_back("pivotTurnLeft"); }|' \
          -e 's|expect("main line reached: turn right, TO_UNLOAD|expect("main line reached: backward right pivot, TO_UNLOAD|' \

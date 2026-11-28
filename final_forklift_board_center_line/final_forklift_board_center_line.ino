@@ -57,15 +57,15 @@ constexpr unsigned long LIFT_FULL_STROKE_MS = 8000UL;  // 최소~최대 높이 �
 
 // ---------------- 상수: 임시값 (?? TODO ??, 실측/확인 후 교체) ----------------
 const bool LINE_STEER_INVERT = true;  // 사용자 지시 "회전은 반전으로". 주행 시험 후 확인
-const int  LINE_BASE_SPEED = 100;     // 직진 기본 속도
+const int  LINE_BASE_SPEED = 60;      // 직진/후진 기본 속도. 사용자 (2026-11-28): "최대로 주지 말고 천천히" -> 100 에서 60 으로 (최대 200)
 const int  LINE_TRIM_1 = 5;           // "아주 미세" 보정 감속량 (사용자 승인 임시값)
 const int  LINE_TRIM_2 = 15;          // "미세" 보정 감속량
-const int  TURN_SPEED = 100;          // 제자리 회전 속도
-const unsigned long TURN_MIN_MS = 300;       // 회전 중 기존 선에서 벗어나는 최소 시간 (임시값)
-const unsigned long TURN_TIMEOUT_MS = 2500;  // 새 선을 못 찾을 때 회전 포기 시간 (임시값)
+const int  TURN_SPEED = 60;           // 제자리/축 회전 속도 (천천히, 100 에서 60)
+const unsigned long TURN_MIN_MS = 500;       // 회전 중 기존 선에서 벗어나는 최소 시간 (임시값, 느린 회전에 맞춰 300 -> 500)
+const unsigned long TURN_TIMEOUT_MS = 4200;  // 새 선을 못 찾을 때 회전 포기 시간 (임시값, 속도 100->60 비율로 2500 -> 4200)
 const unsigned long JUNCTION_ADVANCE_MS = 0; // 교차점 감지 후 회전 전 전진 시간 (0 = 바로 회전)
 const bool  LIGHT_ACTIVE_HIGH = true;        // 광이 강할수록 analogRead 값이 큰지 (미확인)
-const int   LIGHT_BASE_SPEED = 100;          // 광 추적 기본 속도
+const int   LIGHT_BASE_SPEED = 60;           // 광 추적 기본 속도 (천천히, 100 에서 60)
 const float LIGHT_GAIN = 400.0;              // 광 추적 조향 민감도
 const long REAR_STOP_CM = 5;                 // 후방 비상 거리 (사용자: 매우 짧게. 값은 임시)
 const unsigned long REAR_CHECK_MS = 100;     // 후방 초음파 확인 주기 (읽기에 최대 약 20ms)
