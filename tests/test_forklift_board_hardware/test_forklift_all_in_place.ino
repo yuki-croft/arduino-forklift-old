@@ -8,8 +8,8 @@
  *   어떤 상차 숫자 + 하차 알파벳이든 두 글자가 모이면 시작한다. 바퀴 서보는 붙이지 않아 움직이지 않는다.
  * 순서 (각 단계 시작 때 폰에 문구가 뜬다: 센터가 지게차 글자를 문구로 바꿈)
  *   1) 시작        "ST TO LOAD"   : 부저 짧게 2번 + 빨간 LED(D0) 3번 깜박
- *   2) 리프트 올림 "ST LIFT UP"   : LIFT_TEST_MS 동안 올림 (1700us, 사용자 확인 2026-11-28)
- *   3) 리프트 내림 "ST UNLOAD"    : 같은 시간 내림 (1300us) -> 시작 높이로 돌아옴
+ *   2) 리프트 올림 "ST LIFT UP"   : LIFT_TEST_MS 동안 올림 (1300us, 사용자 최종 확인 2026-11-28)
+ *   3) 리프트 내림 "ST UNLOAD"    : 같은 시간 내림 (1700us) -> 시작 높이로 돌아옴
  *   4) 적외선      "ST APPROACH"  : STAGE_MS 동안, 왼/앞/오 수신기 중 하나라도 반사를 받으면 짧게 삐 (손을 앞에 대 보기)
  *   5) 초음파      "ST REVERSE"   : STAGE_MS 동안, 후방 거리가 US_NEAR_CM 이하면 짧게 삐 (손을 뒤에 대 보기)
  *   6) 포토        "ST RETURN"    : STAGE_MS 동안, 왼/오 밝기가 시작 때보다 PHOTO_DELTA 이상 바뀌면 짧게 삐 (손으로 가려 보기)
@@ -42,8 +42,8 @@ const uint8_t PIN_PHOTO_RIGHT = A1;
 const long          BT_BAUD       = 9600;
 const long          IR_FREQ_HZ    = 38000;    // ★ EXTERNAL: 5_ABOT적외선센서.pptx 슬라이드 9
 const int           SERVO_STOP_US = 1500;     // ★ EXTERNAL: 2_2_ABOT주행.pptx 슬라이드 19
-const int           LIFT_UP_US    = 1700;     // 사용자 확인 (2026-11-28): 1700 = 올림
-const int           LIFT_DOWN_US  = 1300;     //                           1300 = 내림
+const int           LIFT_UP_US    = 1300;     // 사용자 최종 확인 (2026-11-28): 1300 = 올림 (반대로 보였던 것은 톱니 어긋남)
+const int           LIFT_DOWN_US  = 1700;     //                                1700 = 내림
 const unsigned long LIFT_TEST_MS  = 2000UL;   // ?? TODO ?? 시험용: 2초 = 약 2cm (8초에 8cm 기준)
 const unsigned long STAGE_MS      = 5000UL;   // ?? TODO ?? 센서 단계마다 5초
 const long          US_NEAR_CM    = 10;       // ?? TODO ?? 시험용 기준 거리
