@@ -7,7 +7,7 @@
  *   (2026-11-28 사용자 요청: "1초마다 값 자동으로 측정되는 거 3개 다")
  * 쓰는 법: USB 를 꽂고 업로드 -> 시리얼 모니터 9600 -> 지게차를 흰 바닥 / 검은 선 / 가지 / 모서리 / 표식 위에 차례로 올려 값을 본다.
  *   블루투스 모듈은 D2/D3 이라 USB 시리얼(D0/D1)과 겹치지 않는다. 바퀴/리프트는 움직이지 않는다.
- *   한 줄 형식: "초,왼쪽A2,가운데A3,오른쪽A4,판정" (판정: 30 이상 = B 검정, 29 이하 = W 흰색, 사용자 기준 2026-11-28)
+ *   한 줄 형식: "초,왼쪽A2,가운데A3,오른쪽A4,판정" (판정: 센서별 검정 기준 이상 = B, 아니면 W. 기준은 2026-11-28 사용자 실측에서 계산)
  *   매 출력 사이 1초 동안 센서마다 여러 번 읽어 평균을 낸다 (순간 튀는 값 완화). 최소/최대는 10초마다 한 줄.
  */
 
@@ -21,7 +21,7 @@ const long          SERIAL_BAUD    = 9600;
 const unsigned long PRINT_MS       = 1000UL;   // 사용자: 1초마다
 const unsigned long SAMPLE_MS      = 10UL;     // 평균용 읽기 간격 (1초에 약 100번)
 const unsigned long MINMAX_EVERY   = 10;       // 출력 10번(10초)마다 최소/최대 한 줄
-const int           LINE_BLACK_MIN = 30;       // 사용자 기준: 검은 선 30~34
+const int           BLACK_MIN[3]   = {31, 45, 67};   // 센서별 검정 기준 (2026-11-28 실측: 흰 L27 C31~38 R57~62 / 검정 L34~ C52~ R71~ 의 가운데)
 const uint8_t       PINS[3]        = {PIN_LINE_LEFT, PIN_LINE_CENTER, PIN_LINE_RIGHT};
 
 long sum[3] = {0, 0, 0};
@@ -33,7 +33,7 @@ unsigned long lastSampleMs = 0, lastPrintMs = 0, printCount = 0;
 void setup() {
   Serial.begin(SERIAL_BAUD);
   Serial.println(F("line values: every 1 s, average of the last second"));
-  Serial.println(F("sec,L(A2),C(A3),R(A4),LCR (B = 30 or more, W = 29 or less)"));
+  Serial.println(F("sec,L(A2),C(A3),R(A4),LCR (B = at/above per-sensor black level 31/45/67, else W)"));
 }
 
 void loop() {
@@ -55,7 +55,7 @@ void loop() {
     count = 0;
     Serial.print(now / 1000); Serial.print(',');
     Serial.print(avg[0]); Serial.print(','); Serial.print(avg[1]); Serial.print(','); Serial.print(avg[2]); Serial.print(',');
-    for (uint8_t i = 0; i < 3; i++) Serial.print(avg[i] >= LINE_BLACK_MIN ? 'B' : 'W');
+    for (uint8_t i = 0; i < 3; i++) Serial.print(avg[i] >= BLACK_MIN[i] ? 'B' : 'W');
     Serial.println();
     if (++printCount % MINMAX_EVERY == 0) {
       Serial.print(F("min L,C,R = ")); Serial.print(minV[0]); Serial.print(','); Serial.print(minV[1]); Serial.print(','); Serial.print(minV[2]);
