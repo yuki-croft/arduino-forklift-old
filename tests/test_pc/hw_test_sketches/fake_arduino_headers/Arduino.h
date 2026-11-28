@@ -23,6 +23,7 @@ int analogRead(uint8_t);
 void delay(unsigned long);
 unsigned long millis();
 void tone(uint8_t, unsigned int, unsigned long = 0);
+void noTone(uint8_t);
 struct Stream {  // real core: HardwareSerial and SoftwareSerial both derive from Stream
   virtual int available() = 0;
   virtual int read() = 0;
