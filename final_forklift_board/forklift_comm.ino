@@ -7,7 +7,7 @@
  */
 
 void report(char code) {  // ◆ NEW
-  bt.write(code);
+  Serial.write(code);
 }
 
 // 칸 글자는 대기 상태에서만 받는다 (작업 중 들어온 글자는 무시). 'X' 는 언제든 받는다.
@@ -19,5 +19,5 @@ void commHandle(char c) {  // ◆ NEW
 }
 
 void commPoll() {  // ◆ NEW
-  while (bt.available() > 0) commHandle((char)bt.read());
+  while (Serial.available() > 0) commHandle((char)Serial.read());
 }

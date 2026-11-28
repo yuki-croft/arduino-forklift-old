@@ -111,11 +111,11 @@ unsigned long liftLastMs = 0, rearCheckMs = 0, rearSinceMs = 0;
 // ---------------- 공용 객체 ----------------
 Servo servoLeft, servoRight, servoLift;
 Ultrasonic ultrasonic(PIN_US_TRIG, PIN_US_ECHO);
-HardwareSerial &bt = Serial;   // ◆ NEW: HC-06 (D0/D1). 이전 NeoSWSerial(D2/D3) 대체
+// 블루투스 모듈 = 하드웨어 Serial (D0/D1). 예전에는 전역 참조 "bt" 를 썼으나 IDE 에서 "'bt' was not declared" 오류가 보고되어 (2026-11-28) Serial 을 직접 쓴다
 
 void setup() {
   initHardware();
-  bt.begin(BT_BAUD);
+  Serial.begin(BT_BAUD);
   enterState(S_WAIT);
 }
 

@@ -8,7 +8,8 @@ unsigned long millis(){ return fakeNow; }
 void pinMode(uint8_t,uint8_t){} int digitalRead(uint8_t){return 1;} int analogRead(uint8_t){return 0;}
 void delay(unsigned long){} void tone(uint8_t,unsigned int,unsigned long){}
 static std::vector<std::string> ev;           // actions requested by the state machine
-HardwareSerial Serial;   // fake D0/D1 port; the sketch reference "bt" points here
+HardwareSerial Serial;   // fake D0/D1 port (the sketch now writes to Serial directly)
+static HardwareSerial &bt = Serial;   // test-only short name used by the checks below
 static bool gCorner=false,gJunction=false,gMarker=false,gCargo=false,gLineLost=false,gRear=false;
 // prototypes the Arduino IDE would generate
 #include "protos.inc"
